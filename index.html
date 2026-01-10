@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>鳥取東部雪道ナビ</title>
+    <meta name="viewport" content="width=device-width">
+    <style>
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;max-width:800px;margin:auto;background:#f8f9fa}
+        h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
+        .status{display:flex;flex-wrap:wrap;gap:15px;margin:15px 0;padding:15px;border-radius:12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white}
+        .status-item{text-align:center;flex:1;min-width:120px}
+        .status-num{font-size:24px;font-weight:700;line-height:1}
+        .status-label{font-size:12px;margin-top:4px;opacity:0.9}
+        .updated{font-size:12px;color:#6c757d;text-align:center;margin:10px 0}
+        .btn-update{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;font-weight:600;box-shadow:0 4px 12px rgba(59,130,246,0.3);transition:all 0.2s}
+        .btn-update:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(59,130,246,0.4)}
+        table{width:100%;border-collapse:collapse;font-size:14px;margin-top:15px;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+        th,td{border:1px solid #dee2e6;padding:12px;text-align:left;vertical-align:middle}
+        th{background:linear-gradient(135deg,#e3f2fd,#bbdefb);font-weight:600;color:#1e3a8a}
+        tr:nth-child(even){background:#f8f9fa}
+        tr:hover{background:#e3f2fd}
+        .loading{background:#fff3cd;color:#856404;text-align:center;font-weight:500;padding:20px!important;border-radius:12px}
+        .official-link{color:#6c757d;font-size:12px;margin-left:10px}
+        @media(max-width:600px){table{font-size:12px}th,td{padding:8px}body{padding:15px}h1{font-size:20px}}
+    </style>
+</head>
+<body>
+    <h1>🚗 鳥取東部雪道ナビ</h1>
+    
+    <div class="status" id="status">
+        <div class="status-item">
+            <div class="status-num" id="totalPoints">-</div>
+            <div class="status-label">監視地点</div>
+        </div>
+        <div class="status-item">
+            <div class="status-num" id="snowStatus">-</div>
+            <div class="status-label">積雪状況</div>
+        </div>
+        <div class="status-item">
+            <div class="status-num" id="avgTemp">-</div>
+            <div class="status-label">平均気温</div>
+        </div>
+        <div class="status-item">
+            <div class="status-num" id="maxSnow">-</div>
+            <div class="status-label">最大積雪</div>
+        </div>
+    </div>
+    
+    <p class="updated">
+        更新: <span id="updated">--</span> | 
+        <button class="btn-update" onclick="refreshData()">🔄 最新情報取得</button>
+        <a href="https://tori-bousai.jp/yukinavi/tobu/" target="_blank" class="official-link">公式サイト→</a>
+    </p>
+    
+    <table id="snowTable">
+        <thead><tr><th>地点</th><th>積雪(cm)</th><th>温度(℃)</th></tr></thead>
+        <tbody id="tableBody">
+            <tr><td colspan="3" class="loading">自動取得中（初回5秒）</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+    const points = [
+        "鳥取駅前(東品治町)","北園","海蔵寺","湖山町北","細見","国府町新町","商栄町～南隈",
+        "若桜町福部","智頭町智頭","八頭町船岡","倉田(山上)","佐治(上日高)","青谷IC周辺",
+        "鹿野町河内","河原町河原駅前","用瀬町中心","洞谷","徳尾(嶋入口)","岩坪",
+        "福部町海士","気高町下光元","岩美町浦富","湯山(砂丘入口)","百谷ダム入口","越路","高路"
+    ];
+
+    function updateStatus(snowData) {
+        const total = snowData.length;
+        const snows = snowData.map(d => parseFloat(d.snow) || 0).filter(n => !isNaN(n));
+        const temps = snowData.map(d => parseFloat(d.temp) || 0).filter(n => !isNaN(n));
+        
+        const avgSnow = snows.reduce((a,b)=>a+b,0)/snows.length || 0;
+        const avgTemp = temps.reduce((a,b)=>a+b,0)/temps.length || 0;
+        const maxSnow = Math.max(...snows);
+        
+        const snowStatus = avgSnow === 0 ? '🚗路面良好' : avgSnow < 1 ? '❄️微残雪' : avgSnow < 5 ? '⚠️注意' : '🚨大雪';
+        
+        document.getElementById('totalPoints').textContent = total;
+        document.getElementById('snowStatus').textContent = snowStatus;
+        document.getElementById('avgTemp').textContent = avgTemp.toFixed(1);
+        document.getElementById('maxSnow').textContent = maxSnow.toFixed(1);
+    }
+
+    async function refreshData() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '<tr><td colspan="3" class="loading">取得中...</td></tr>';
+        
+        try {
+            const response = await fetch('https://tori-bousai.jp/yukinavi/tobu/');
+            const html = await response.text();
+            
+            const snowData = [];
+            tbody.innerHTML = '';
+            
+            points.forEach(point => {
+                const snowMatch = html.match(new RegExp(point.replace(/[()～]/g, '\\$&') + '.*?([0-9.]+?)[cm\\s]', 'i'));
+                const tempMatch = html.match(new RegExp(point.replace(/[()～]/g, '\\$&') + '.*?([0-9.-]+?)[℃]', 'i'));
+                
+                const snow = snowMatch?.[1] || 'N/A';
+                const temp = tempMatch?.[1] || 'N/A';
+                snowData.push({point, snow, temp});
+                
+                const row = tbody.insertRow();
+                row.innerHTML = `<td style="font-weight:500">${point}</td><td style="color:${snow==='0.0'?'#10b981':'#f59e0b'}">${snow}</td><td>${temp}</td>`;
+            });
+            
+            updateStatus(snowData);
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="3" class="loading">通信エラー。🔄ボタンで再試行</td></tr>';
+        }
+        
+        document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
+    }
+
+    // 初回自動取得＋5分ごと更新
+    refreshData();
+    setInterval(refreshData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
