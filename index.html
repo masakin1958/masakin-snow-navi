@@ -45,7 +45,6 @@ th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
 </table>
 
 <script>
-// ID（地点番号）をベースにした26地点リスト
 const pointsMaster = [
     {id: "159", name: "鳥取駅前(東品治町)"},
     {id: "249", name: "北園"},
@@ -86,9 +85,10 @@ async function refreshData() {
         let snowData = [];
 
         pointsMaster.forEach(p => {
-            // ID(地点番号)を使って、HTML内の各地点のブロックを正確に特定する
-            const regex = new RegExp('data/' + p.id + '/[\\s\\S]*?路上温度[\\s\\S]*?℃', 'i');
-            const match = html.match(regex);
+            // IDを基準にした解析ロジックをより確実に修正
+            // [^]*? を使い、地点ブロック内を幅広く探索
+            const blockRegex = new RegExp('data/' + p.id + '/[^]*?路上積雪深[^]*?路上温度[^]*?℃', 'i');
+            const match = html.match(blockRegex);
             
             if (match) {
                 const block = match[0];
@@ -121,7 +121,7 @@ function updateStatus(sd) {
     const s = sd.map(d=>parseFloat(d.snow)).filter(n=>!isNaN(n));
     const t = sd.map(d=>parseFloat(d.temp)).filter(n=>!isNaN(n));
     document.getElementById('totalPoints').textContent = sd.length;
-    document.getElementById('snowStatus').textContent = Math.max(...s, 0) === 0 ? '🚗良好' : '⚠️注意';
+    document.getElementById('snowStatus').textContent = Math.max(...s, 0) === 0 ? '🚗良好' : '⚠️雪道注意';
     document.getElementById('avgTemp').textContent = t.length ? (t.reduce((a,b)=>a+b,0)/t.length).toFixed(1) : '--';
     document.getElementById('maxSnow').textContent = s.length ? Math.max(...s).toFixed(1) : '0.0';
 }
