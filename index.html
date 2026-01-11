@@ -24,19 +24,19 @@
         font-weight: bold;
     }
 
-    /* リンクボタンのスタイル */
-    .link-box { margin: 15px 0; text-align: center; }
+    /* リンクボタンエリアのスタイル */
+    .link-box { margin: 20px 0; text-align: center; }
     .link {
-        display: block; /* 幅いっぱいに広げる */
+        display: block;
         background: #1d4ed8;
         color: white;
         text-decoration: none;
-        padding: 12px;
+        padding: 15px;
         border-radius: 30px;
         font-weight: bold;
-        font-size: 14px;
+        font-size: 16px;
         transition: background 0.3s;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
     .link:hover { background: #1e3a8a; }
 
@@ -114,24 +114,30 @@ async function refreshData() {
     const tbody = document.getElementById('tableBody');
     const headerDate = document.getElementById('headerDate');
     
-    // 3列に合わせてcolspanを3に変更
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">データを読み込んでいます...</td></tr>';
+    // 読み込み中表示
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">最新データを取得中...</td></tr>';
     
     try {
-        const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://tori-bousai.jp/yukinavi/tobu/'));
+        // 【重要】URLの末尾に時刻(?t=...)をつけて、強制的に最新データを取得する
+        const timestamp = new Date().getTime();
+        const targetUrl = 'https://tori-bousai.jp/yukinavi/tobu/?t=' + timestamp;
+        
+        // corsproxy経由でアクセス
+        const response = await fetch('https://corsproxy.io/?' + encodeURIComponent(targetUrl));
         const html = await response.text();
         
-        // HTML整形
+        // HTML整形（不要なタグを除去してテキスト化）
         let formattedText = html.replace(/<\/(tr|div|p|li|dd)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n');
         formattedText = formattedText.replace(/<[^>]+>/g, '');
         const lines = formattedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
         tbody.innerHTML = '';
         
-        // 最新の更新日時取得
+        // 最新の更新日時取得（HTMLの上部にある日付を探す）
         let dataTime = "日時不明";
-        for(let i=0; i<10; i++) {
-            if(lines[i] && lines[i].match(/\d{4}\/\d{2}\/\d{2}/)) {
+        for(let i=0; i<30; i++) {
+            // "YYYY/MM/DD HH:MM" の形式を探す
+            if(lines[i] && lines[i].match(/\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}/)) {
                 dataTime = lines[i];
                 break;
             }
@@ -146,9 +152,10 @@ async function refreshData() {
             const nameIndex = lines.findIndex(line => line.includes(p.search));
 
             if (nameIndex !== -1) {
-                // 2. 日時行検索
+                // 2. 日時行検索（地点名の直後から探す）
                 let dateIndex = -1;
-                for (let i = nameIndex; i < Math.min(nameIndex + 15, lines.length); i++) {
+                // 検索範囲を20行確保して、データを見逃さないようにする
+                for (let i = nameIndex; i < Math.min(nameIndex + 20, lines.length); i++) {
                     if (lines[i].includes("観測日時")) {
                         dateIndex = i;
                         break;
@@ -156,14 +163,21 @@ async function refreshData() {
                 }
 
                 if (dateIndex !== -1) {
-                    const chunk = lines.slice(dateIndex, dateIndex + 8);
+                    // 観測日時が見つかったら、そこから下の数行(温度や積雪)を取得
+                    const chunk = lines.slice(dateIndex, dateIndex + 10);
                     
                     for (let k = 0; k < chunk.length; k++) {
+                        // 温度の取得
                         if (chunk[k].includes("路上温度")) {
-                            if (chunk[k+1]) tempStr = chunk[k+1]; 
+                            if (chunk[k+1] && chunk[k+1].match(/[\d\.\-]+/)) {
+                                tempStr = chunk[k+1];
+                            }
                         }
+                        // 積雪の取得
                         if (chunk[k].includes("路上積雪深")) {
-                            if (chunk[k+1]) snowStr = chunk[k+1]; 
+                            if (chunk[k+1] && chunk[k+1].match(/[\d\.\-]+/)) {
+                                snowStr = chunk[k+1];
+                            }
                         }
                     }
                 }
@@ -172,13 +186,13 @@ async function refreshData() {
             // 表に行を追加
             const row = tbody.insertRow();
             
-            // 積雪アラート色（数値があれば赤）
+            // 積雪アラート色（0cm以外なら赤字）
             let snowColor = "black";
             if (snowStr !== "--" && !snowStr.startsWith("0cm") && !snowStr.startsWith("0.0")) {
-                snowColor = "#d32f2f"; // 赤
+                snowColor = "#d32f2f"; 
             }
 
-            // リンク先を detail.php?id=... に修正
+            // 詳細ページへの正しいリンクを生成
             row.innerHTML = `
                 <td><a href="https://tori-bousai.jp/yukinavi/tobu/detail.php?id=${p.id}" target="_blank" style="text-decoration:none; color:#1d4ed8; font-weight:bold;">${p.name}</a></td>
                 <td class="val-snow" style="color:${snowColor}">${snowStr}</td>
@@ -188,10 +202,11 @@ async function refreshData() {
 
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="3" style="color:red; text-align:center;">エラー：データの取得に失敗しました</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="color:red; text-align:center;">エラー：データの取得に失敗しました。<br>しばらく待ってから再読み込みしてください。</td></tr>';
     }
 }
 
+// ページ読み込み時に実行
 refreshData();
 </script>
 
