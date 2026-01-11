@@ -45,38 +45,37 @@ th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
 </table>
 
 <script>
-// 数字（地点ID）をキーにして、表示名を指定。岩吉などの誤表記も修正しました。
+// CSVの4列目をベースにした正式名称とIDの対応表
 const pointsMaster = [
-    {id: "159", name: "鳥取駅前(東品治町)"},
-    {id: "249", name: "北園"},
-    {id: "161", name: "海蔵寺(環境大入口)"},
-    {id: "162", name: "湖山町北(鳥商前)"},
-    {id: "250", name: "細見"},
-    {id: "164", name: "国府町新町(盲学校前)"},
-    {id: "261", name: "南隈(国道9号立体)"},
-    {id: "167", name: "福部町海士(海士交差点)"},
-    {id: "129", name: "八頭町船岡(越路)"},
-    {id: "064", name: "倉田(高路)"},
-    {id: "039", name: "佐治(辰巳峠)"},
-    {id: "133", name: "青谷IC周辺(絹見)"},
+    {id: "159", name: "鳥取市東品治町【鳥取駅前】"},
+    {id: "249", name: "鳥取市北園"},
+    {id: "161", name: "鳥取市海蔵寺【環境大入口】"},
+    {id: "162", name: "鳥取市湖山町北【鳥取商業高前】"},
+    {id: "250", name: "鳥取市細見"},
+    {id: "164", name: "国府町新町【鳥取盲学校前】"},
+    {id: "261", name: "鳥取市商栄町～南隈【国道9号立体交差】"},
+    {id: "167", name: "福部町海士【海士交差点】"},
+    {id: "129", name: "鳥取市越路"},
+    {id: "064", name: "鳥取市高路"},
+    {id: "039", name: "佐治町栃原【辰巳峠】"},
+    {id: "133", name: "青谷町絹見"},
     {id: "002", name: "鹿野町河内"},
-    {id: "163", name: "河原町河原駅前"},
-    {id: "130", name: "洞谷"},
-    {id: "160", name: "徳尾(嶋入口)"},
-    {id: "001", name: "岩坪"},
+    {id: "163", name: "河原町河原"},
+    {id: "130", name: "鳥取市洞谷"},
+    {id: "160", name: "鳥取市徳尾【嶋入口交差点】"},
+    {id: "001", name: "鳥取市岩坪"},
     {id: "157", name: "気高町下光元"},
-    {id: "152", name: "岩美町浦富(岩美IC)"},
-    {id: "165", name: "湯山(砂丘入口)"},
-    {id: "154", name: "百谷ダム入口"},
-    {id: "172", name: "正蓮寺交差点"},
-    {id: "257", name: "鳥取市千代水"},
-    {id: "260", name: "白兎(JR立体南側)"},
+    {id: "152", name: "岩美町浦富【岩美IC付近】"},
+    {id: "165", name: "福部町湯山【鳥取砂丘入口】"},
+    {id: "154", name: "鳥取市百谷【百谷ダム入口】"},
+    {id: "172", name: "鳥取市正蓮寺【正蓮寺交差点】"},
+    {id: "257", name: "鳥取市千代水【千代水4丁目周辺】"},
+    {id: "260", name: "鳥取市白兎【JR立体交差南側】"},
     {id: "264", name: "鳥取市吉方町"},
     {id: "103", name: "用瀬町江波"}
 ];
 
 const DATA_SOURCE = "https://tori-bousai.jp/yukinavi/tobu/";
-const LINK_BASE = "https://yukinavi.net/i/data/";
 
 async function refreshData() {
     const tbody = document.getElementById('tableBody');
@@ -90,26 +89,37 @@ async function refreshData() {
         tbody.innerHTML = '';
         
         pointsMaster.forEach(p => {
-            // 地点番号（例: 159）のリンクが含まれる行を探し、その後のデータを抽出するロジック
-            const pointBlockRe = new RegExp('data/' + p.id + '/index\\.html[\\s\\S]*?路上積雪深\\s*([0-9.]+)?\\s*cm[\\s\\S]*?路上温度\\s*([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i');
-            const match = html.match(pointBlockRe);
+            // 修正版：IDが含まれる箇所から次の「路上温度」「路上積雪深」を探す
+            // サイトのHTML構造に合わせて検索パターンをより柔軟にしました
+            const idPattern = 'data/' + p.id + '/';
+            const splitContent = html.split(idPattern);
             
-            const snow = (match && match[1]) ? match[1] : '0.0';
-            let temp = (match && match[2]) ? match[2].replace(/[−ー]/g, '-').trim() : '--';
+            let snow = '0.0';
+            let temp = '--';
+
+            if (splitContent.length > 1) {
+                const block = splitContent[1].substring(0, 1000); // ID以降の1000文字を調査
+                
+                const snowMatch = block.match(/路上積雪深\s*([0-9.]+)?\s*cm/i);
+                const tempMatch = block.match(/路上温度\s*([−-ー]?\s*[0-9.]+?)\s*℃/i);
+                
+                if (snowMatch && snowMatch[1]) snow = snowMatch[1];
+                if (tempMatch && tempMatch[1]) temp = tempMatch[1].replace(/[−ー]/g, '-').trim();
+            }
             
             snowData.push({point: p.name, snow, temp});
             
             const row = tbody.insertRow();
             const snowColor = parseFloat(snow) > 0 ? '#f59e0b' : '#10b981';
             row.innerHTML = `
-                <td><a href="${LINK_BASE}${p.id}/index.html" target="_blank" class="point-link">${p.name}</a></td>
+                <td><a href="https://yukinavi.net/i/data/${p.id}/index.html" target="_blank" class="point-link">${p.name}</a></td>
                 <td style="color:${snowColor}; font-weight:bold">${snow}</td>
                 <td>${temp}</td>
             `;
         });
         updateStatus(snowData);
     } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">取得に失敗しました。時間をおいてお試しください。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">取得エラー。再試行してください。</td></tr>';
     }
     document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
 }
