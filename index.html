@@ -45,33 +45,34 @@ th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
 </table>
 
 <script>
+// 【重要】元サイトに書かれている「正確な日本語名称」で検索するリスト
 const pointsMaster = [
-    {id: "159", name: "鳥取駅前(東品治町)"},
-    {id: "249", name: "北園"},
-    {id: "161", name: "海蔵寺(環境大入口)"},
-    {id: "162", name: "湖山町北(鳥商前)"},
-    {id: "250", name: "細見"},
-    {id: "164", name: "国府町新町(盲学校前)"},
-    {id: "261", name: "南隈(国道9号)"},
-    {id: "167", name: "福部町海士(海士交差点)"},
-    {id: "129", name: "八頭町船岡(越路)"},
-    {id: "064", name: "倉田(高路)"},
-    {id: "039", name: "佐治(辰巳峠)"},
-    {id: "133", name: "青谷IC周辺(絹見)"},
-    {id: "002", name: "鹿野町河内"},
-    {id: "163", name: "河原町河原駅前"},
-    {id: "130", name: "洞谷"},
-    {id: "160", name: "徳尾(嶋入口)"},
-    {id: "001", name: "岩坪"},
-    {id: "157", name: "気高町下光元"},
-    {id: "152", name: "岩美町浦富(岩美IC付近)"},
-    {id: "165", name: "湯山(砂丘入口)"},
-    {id: "154", name: "百谷ダム入口"},
-    {id: "172", name: "正蓮寺交差点"},
-    {id: "257", name: "鳥取市千代水"},
-    {id: "260", name: "白兎(JR立体交差南側)"},
-    {id: "264", name: "鳥取市吉方町"},
-    {id: "103", name: "用瀬町江波"}
+    {id: "159", search: "鳥取市東品治町【鳥取駅前】", name: "鳥取駅前(東品治町)"},
+    {id: "249", search: "鳥取市北園", name: "北園"},
+    {id: "161", search: "鳥取市海蔵寺【環境大入口】", name: "海蔵寺(環境大入口)"},
+    {id: "162", search: "鳥取市湖山町北【鳥取商業高前】", name: "湖山町北(鳥商前)"},
+    {id: "250", search: "鳥取市細見", name: "細見"},
+    {id: "164", search: "国府町新町【鳥取盲学校前】", name: "国府町新町(盲学校前)"},
+    {id: "261", search: "鳥取市商栄町～南隈【国道9号立体交差】", name: "南隈(国道9号)"},
+    {id: "167", search: "福部町海士【海士交差点】", name: "福部町海士(海士交差点)"},
+    {id: "129", search: "鳥取市越路", name: "八頭町船岡(越路)"},
+    {id: "064", search: "鳥取市高路", name: "倉田(高路)"},
+    {id: "039", search: "佐治町栃原【辰巳峠】", name: "佐治(辰巳峠)"},
+    {id: "133", search: "青谷町絹見", name: "青谷IC周辺(絹見)"},
+    {id: "002", search: "鹿野町河内", name: "鹿野町河内"},
+    {id: "163", search: "河原町河原", name: "河原町河原駅前"},
+    {id: "130", search: "鳥取市洞谷", name: "洞谷"},
+    {id: "160", search: "鳥取市徳尾【嶋入口交差点】", name: "徳尾(嶋入口)"},
+    {id: "001", search: "鳥取市岩坪", name: "岩坪"},
+    {id: "157", search: "気高町下光元", name: "気高町下光元"},
+    {id: "152", search: "岩美町浦富【岩美IC付近】", name: "岩美町浦富(岩美IC付近)"},
+    {id: "165", search: "福部町湯山【鳥取砂丘入口】", name: "湯山(砂丘入口)"},
+    {id: "154", search: "鳥取市百谷【百谷ダム入口】", name: "百谷ダム入口"},
+    {id: "172", search: "鳥取市正蓮寺【正蓮寺交差点】", name: "正蓮寺交差点"},
+    {id: "257", search: "鳥取市千代水【千代水4丁目周辺】", name: "鳥取市千代水"},
+    {id: "260", search: "鳥取市白兎【JR立体交差南側】", name: "白兎(JR立体交差南側)"},
+    {id: "264", search: "鳥取市吉方町", name: "鳥取市吉方町"},
+    {id: "103", search: "用瀬町江波", name: "用瀬町江波"}
 ];
 
 async function refreshData() {
@@ -81,22 +82,27 @@ async function refreshData() {
     try {
         const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://tori-bousai.jp/yukinavi/tobu/'));
         const html = await response.text();
+        
+        // HTMLタグを全てスペースに置換して「純粋なテキスト」にする（これが最強の検索方法）
+        const plainText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+        
         tbody.innerHTML = '';
         let snowData = [];
 
         pointsMaster.forEach(p => {
-            // IDを基準にした解析ロジックをより確実に修正
-            // [^]*? を使い、地点ブロック内を幅広く探索
-            const blockRegex = new RegExp('data/' + p.id + '/[^]*?路上積雪深[^]*?路上温度[^]*?℃', 'i');
-            const match = html.match(blockRegex);
+            // 日本語の名称で場所を特定する
+            const index = plainText.indexOf(p.search);
             
-            if (match) {
-                const block = match[0];
-                const sMatch = block.match(/路上積雪深\s*([\d.]+)?\s*cm/);
-                const tMatch = block.match(/路上温度\s*([−-ー]?\s*[\d.]+)?\s*℃/);
+            if (index !== -1) {
+                // その場所から後ろ500文字を切り出して数字を探す
+                const snippet = plainText.substring(index, index + 500);
+                
+                // 積雪と温度を抽出（タグが無いので見つけやすい）
+                const sMatch = snippet.match(/路上積雪深\s*([\d.]+)?\s*cm/);
+                const tMatch = snippet.match(/路上温度\s*([−-ー]?\s*[\d.]+)?\s*℃/);
 
                 const snow = (sMatch && sMatch[1]) ? sMatch[1] : "0.0";
-                let temp = (tMatch && tMatch[1]) ? tMatch[1].replace(/[−ー]/g, '-').trim() : "--";
+                let temp = (tMatch && tMatch[1]) ? tMatch[1].replace(/[−ー]/g, '-').replace(/\s/g,'') : "--";
 
                 snowData.push({snow, temp});
 
@@ -113,7 +119,8 @@ async function refreshData() {
         updateStatus(snowData);
         document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">データ取得失敗。再試行してください</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">データ取得失敗。再読込してください。</td></tr>';
+        console.error(e);
     }
 }
 
