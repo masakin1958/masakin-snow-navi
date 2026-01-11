@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<title>🚗鳥取東部雪道ナビ</title>
+<title>🚗 鳥取東部雪道ナビ</title>
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;max-width:800px;margin:auto;background:#f8f9fa}
 h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
@@ -17,7 +17,7 @@ h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
 .btn-update{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:15px;font-weight:600;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
 table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
 th,td{border:1px solid #dee2e6;padding:12px;text-align:left}
-th{background:#e3f2fd;color:#1e3a8a}
+th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
 .point-link{color:#1976d2;text-decoration:none;font-weight:bold}
 .loading{text-align:center;padding:30px!important;color:#856404;background:#fff3cd}
 @media(max-width:600px){table{font-size:12px}th,td{padding:8px}h1{font-size:20px}}
@@ -27,7 +27,7 @@ th{background:#e3f2fd;color:#1e3a8a}
 <h1>🚗 鳥取東部雪道ナビ</h1>
 
 <div class="link-box">
-<a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">📋鳥取ゆきみちナビ（本家）</a>
+<a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">📋鳥取ゆきみちナビ（本家サイト）</a>
 </div>
 
 <div class="status" id="status">
@@ -45,29 +45,34 @@ th{background:#e3f2fd;color:#1e3a8a}
 </table>
 
 <script>
-// 元の26箇所ベースの厳選リスト
+// 26箇所の厳選リスト（名称とURLを最適化）
 const pointsData = [
-    {name: "鳥取駅前", url: "data/159/index.html", s: "東品治町"},
+    {name: "鳥取駅前", url: "data/159/index.html", s: "鳥取駅前"},
     {name: "北園", url: "data/249/index.html", s: "北園"},
-    {name: "海蔵寺(環境大入口)", url: "data/161/index.html", s: "海蔵寺"},
-    {name: "湖山町北(鳥商前)", url: "data/162/index.html", s: "湖山町北"},
+    {name: "環境大入口(海蔵寺)", url: "data/161/index.html", s: "海蔵寺"},
+    {name: "鳥取商業高前", url: "data/162/index.html", s: "湖山町北"},
     {name: "細見", url: "data/250/index.html", s: "細見"},
-    {name: "国府町新町", url: "data/164/index.html", s: "新町"},
+    {name: "国府町新町", url: "data/164/index.html", s: "国府町新町"},
     {name: "南隈", url: "data/261/index.html", s: "南隈"},
     {name: "福部町海士", url: "data/167/index.html", s: "海士"},
     {name: "八頭町船岡(越路)", url: "data/129/index.html", s: "越路"},
-    {name: "倉田(山上)", url: "data/064/index.html", s: "高路"},
-    {name: "佐治(上日高)", url: "data/039/index.html", s: "佐治"},
+    {name: "倉田(高路)", url: "data/064/index.html", s: "高路"},
+    {name: "辰巳峠(佐治)", url: "data/039/index.html", s: "佐治"},
     {name: "青谷IC周辺", url: "data/133/index.html", s: "絹見"},
     {name: "鹿野町河内", url: "data/002/index.html", s: "河内"},
-    {name: "河原町河原駅前", url: "data/163/index.html", s: "河原"},
+    {name: "河原町河原", url: "data/163/index.html", s: "河原"},
     {name: "洞谷", url: "data/130/index.html", s: "洞谷"},
-    {name: "徳尾(嶋入口)", url: "data/160/index.html", s: "徳尾"},
+    {name: "嶋入口(徳尾)", url: "data/160/index.html", s: "徳尾"},
     {name: "岩坪", url: "data/001/index.html", s: "岩坪"},
     {name: "気高町下光元", url: "data/157/index.html", s: "下光元"},
     {name: "岩美町浦富", url: "data/152/index.html", s: "岩美町浦富"},
     {name: "湯山(砂丘入口)", url: "data/165/index.html", s: "湯山"},
-    {name: "百谷ダム入口", url: "data/154/index.html", s: "百谷"}
+    {name: "百谷ダム入口", url: "data/154/index.html", s: "百谷"},
+    {name: "正蓮寺交差点", url: "data/172/index.html", s: "正蓮寺"},
+    {name: "鳥取市千代水", url: "data/257/index.html", s: "千代水"},
+    {name: "白兎", url: "data/260/index.html", s: "白兎"},
+    {name: "吉方", url: "data/264/index.html", s: "吉方"},
+    {name: "用瀬町江波", url: "data/103/index.html", s: "江波"}
 ];
 
 const DATA_SOURCE = "https://tori-bousai.jp/yukinavi/tobu/";
@@ -88,7 +93,7 @@ function updateStatus(snowData) {
 
 async function refreshData() {
     const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '<tr><td colspan="3" class="loading">解析中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">最新情報を解析中...</td></tr>';
     
     try {
         const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(DATA_SOURCE);
@@ -100,9 +105,9 @@ async function refreshData() {
         
         pointsData.forEach(p => {
             const escaped = p.s.replace(/[()～]/g, '\\$&');
-            // 改行やタグを跨いで確実に数値を拾う正規表現
-            const snowMatch = html.match(new RegExp(escaped + '[\\s\\S]*?([0-9.]+?)\\s*cm', 'i'));
-            const tempMatch = html.match(new RegExp(escaped + '[\\s\\S]*?([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i'));
+            // タグの内部にある数値をより確実に拾うロジック
+            const snowMatch = html.match(new RegExp(escaped + '[^>]*?>\\s*([0-9.]+?)\\s*cm', 'i'));
+            const tempMatch = html.match(new RegExp(escaped + '[^>]*?>\\s*([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i'));
             
             const snow = snowMatch ? snowMatch[1] : '0.0';
             let temp = tempMatch ? tempMatch[1].replace(/[−ー]/g, '-').trim() : '--';
@@ -119,7 +124,7 @@ async function refreshData() {
         });
         updateStatus(snowData);
     } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">通信エラー</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">通信エラー。ボタンで再試行してください。</td></tr>';
     }
     document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
 }
