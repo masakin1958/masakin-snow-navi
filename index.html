@@ -3,26 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<title>🚗鳥取東部雪道ナビ (詳細リンク版)</title>
+<title>🚗鳥取東部雪道ナビ (完全版)</title>
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;max-width:800px;margin:auto;background:#f8f9fa}
 h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
-.link-box{background:#e3f2fd;border-radius:12px;padding:20px;margin:20px 0;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-.link{color:#1976d2;font-size:18px;font-weight:600;text-decoration:none;display:inline-block;padding:12px 24px;border-radius:25px;background:#bbdefb;transition:all 0.3s}
-.link:hover{background:#90caf9;transform:translateY(-2px)}
-.status{display:flex;flex-wrap:wrap;gap:15px;margin:15px 0;padding:15px;border-radius:12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white}
-.status-item{text-align:center;flex:1;min-width:120px}
-.status-num{font-size:24px;font-weight:700;line-height:1}
-.status-label{font-size:12px;margin-top:4px;opacity:0.9}
-.updated{font-size:14px;color:#6c757d;text-align:center;margin:15px 0}
-.btn-update{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:12px 24px;border-radius:25px;cursor:pointer;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(59,130,246,0.3);transition:all 0.2s;margin:5px}
-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:15px;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);background:white}
-th,td{border:1px solid #dee2e6;padding:12px;text-align:left;vertical-align:middle}
-th{background:linear-gradient(135deg,#e3f2fd,#bbdefb);font-weight:600;color:#1e3a8a}
-tr:nth-child(even){background:#f8f9fa}
-.point-link{color:#1976d2;text-decoration:none;font-weight:600}
-.point-link:hover{text-decoration:underline}
-.loading{background:#fff3cd;color:#856404;text-align:center;padding:20px!important}
+.link-box{background:#e3f2fd;border-radius:12px;padding:20px;margin:15px 0;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.link{color:#1976d2;font-size:16px;font-weight:600;text-decoration:none;display:inline-block;padding:10px 20px;border-radius:25px;background:#bbdefb;transition:all 0.3s}
+.link:hover{background:#90caf9}
+.status{display:flex;flex-wrap:wrap;gap:10px;margin:15px 0;padding:15px;border-radius:12px;background:linear-gradient(135deg,#3b82f6 0%,#1e40af 100%);color:white}
+.status-item{text-align:center;flex:1;min-width:100px}
+.status-num{font-size:22px;font-weight:700}
+.status-label{font-size:11px;opacity:0.9}
+.updated{font-size:13px;color:#6c757d;text-align:center;margin:10px 0}
+.btn-update{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:15px;font-weight:600;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+th,td{border:1px solid #dee2e6;padding:10px;text-align:left}
+th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
+.point-link{color:#1976d2;text-decoration:none;font-weight:bold}
+.loading{text-align:center;padding:30px!important;color:#856404;background:#fff3cd}
 @media(max-width:600px){table{font-size:12px}th,td{padding:8px}h1{font-size:20px}}
 </style>
 </head>
@@ -30,7 +28,7 @@ tr:nth-child(even){background:#f8f9fa}
 <h1>🚗 鳥取東部雪道ナビ</h1>
 
 <div class="link-box">
-<a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">📋鳥取ゆきみちナビ 本家サイト</a>
+<a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">📋鳥取ゆきみちナビ（本家）</a>
 </div>
 
 <div class="status" id="status">
@@ -43,35 +41,86 @@ tr:nth-child(even){background:#f8f9fa}
 <p class="updated">更新: <span id="updated">--</span> | <button class="btn-update" onclick="refreshData()">🔄 最新情報取得</button></p>
 
 <table id="snowTable">
-    <thead><tr><th>地点 (詳細カメラへ)</th><th>積雪(cm)</th><th>温度(℃)</th></tr></thead>
-    <tbody id="tableBody"><tr><td colspan="3" class="loading">データ読み込み中...</td></tr></tbody>
+    <thead><tr><th>地点 (詳細カメラ)</th><th>積雪(cm)</th><th>気温(℃)</th></tr></thead>
+    <tbody id="tableBody"><tr><td colspan="3" class="loading">データ取得中...</td></tr></tbody>
 </table>
 
 <script>
-// 地点リストとリンク先のデータ
+// お送りいただいた全リストを整理
 const pointsData = [
-    {name: "鳥取駅前", url: "data/159/index.html", search: "鳥取駅前"},
-    {name: "北園", url: "data/249/index.html", search: "北園"},
-    {name: "環境大入口(海蔵寺)", url: "data/161/index.html", search: "海蔵寺"},
-    {name: "鳥取商業高前", url: "data/162/index.html", search: "湖山町北"},
-    {name: "細見", url: "data/250/index.html", search: "細見"},
-    {name: "鳥取盲学校前(国府町)", url: "data/164/index.html", search: "国府町新町"},
-    {name: "南隈", url: "data/261/index.html", search: "南隈"},
-    {name: "鳥取砂丘入口", url: "data/165/index.html", search: "湯山"},
-    {name: "海士交差点", url: "data/167/index.html", search: "海士"},
-    {name: "百谷ダム入口", url: "data/154/index.html", search: "百谷"},
-    {name: "鳥取市越路", url: "data/129/index.html", search: "越路"},
-    {name: "鳥取市高路", url: "data/064/index.html", search: "高路"},
-    {name: "嶋入口交差点(徳尾)", url: "data/160/index.html", search: "徳尾"},
-    {name: "鳥取市岩坪", url: "data/001/index.html", search: "岩坪"},
-    {name: "鹿野町河内", url: "data/002/index.html", search: "河内"},
-    {name: "気高町下光元", url: "data/157/index.html", search: "下光元"},
-    {name: "青谷IC周辺(絹見)", url: "data/133/index.html", search: "絹見"},
-    {name: "辰巳峠(佐治町)", url: "data/039/index.html", search: "佐治"},
-    {name: "洞谷", url: "data/130/index.html", search: "洞谷"}
+    {name: "七坂トンネル付近", url: "data/041/index.html", s: "岩美町陸上"},
+    {name: "東浜IC付近", url: "data/279/index.html", s: "岩美町陸上"},
+    {name: "岩美IC付近", url: "data/152/index.html", s: "岩美町浦富"},
+    {name: "旧佐治中学校前", url: "data/166/index.html", s: "佐治町古市"},
+    {name: "辰巳峠", url: "data/039/index.html", s: "佐治町栃原"},
+    {name: "佐治町余戸", url: "data/134/index.html", s: "佐治町余戸"},
+    {name: "岩美町陸上(県256)", url: "data/156/index.html", s: "岩美町陸上"},
+    {name: "駟馳山峠", url: "data/241/index.html", s: "岩美町大谷"},
+    {name: "岩美町田河内", url: "data/076/index.html", s: "田河内"},
+    {name: "岩美町洗井", url: "data/078/index.html", s: "洗井"},
+    {name: "岩美町延興寺", url: "data/100/index.html", s: "延興寺"},
+    {name: "岩美町大坂", url: "data/173/index.html", s: "大坂"},
+    {name: "福部町左近", url: "data/077/index.html", s: "左近"},
+    {name: "海士交差点", url: "data/167/index.html", s: "海士"},
+    {name: "鳥取砂丘入口", url: "data/165/index.html", s: "湯山"},
+    {name: "鳥取市秋里", url: "data/153/index.html", s: "秋里"},
+    {name: "鳥取市幸町", url: "data/158/index.html", s: "幸町"},
+    {name: "鳥取駅前", url: "data/159/index.html", s: "東品治町"},
+    {name: "百谷ダム入口", url: "data/154/index.html", s: "百谷"},
+    {name: "正蓮寺交差点", url: "data/172/index.html", s: "正蓮寺"},
+    {name: "環境大入口(海蔵寺)", url: "data/161/index.html", s: "海蔵寺"},
+    {name: "鳥取市越路", url: "data/129/index.html", s: "越路"},
+    {name: "鳥取商業高前", url: "data/162/index.html", s: "湖山町北"},
+    {name: "鳥取市千代水", url: "data/257/index.html", s: "千代水"},
+    {name: "嶋入口(徳尾)", url: "data/160/index.html", s: "徳尾"},
+    {name: "青島前(高住)", url: "data/015/index.html", s: "高住"},
+    {name: "鳥取市御熊", url: "data/014/index.html", s: "御熊"},
+    {name: "鳥取市高路", url: "data/064/index.html", s: "高路"},
+    {name: "鳥取市松上", url: "data/170/index.html", s: "松上"},
+    {name: "鳥取市河内(安蔵)", url: "data/131/index.html", s: "河内"},
+    {name: "鳥取市岩坪", url: "data/001/index.html", s: "岩坪"},
+    {name: "鳥取市矢矯", url: "data/099/index.html", s: "矢矯"},
+    {name: "鳥取市洞谷", url: "data/130/index.html", s: "洞谷"},
+    {name: "気高町下光元", url: "data/157/index.html", s: "下光元"},
+    {name: "気高町下坂本", url: "data/256/index.html", s: "下坂本"},
+    {name: "浜村警察署付近", url: "data/255/index.html", s: "北浜"},
+    {name: "気高町上光", url: "data/013/index.html", s: "上光"},
+    {name: "気高町二本木", url: "data/012/index.html", s: "二本木"},
+    {name: "浜村鹿野温泉IC北", url: "data/254/index.html", s: "乙亥正"},
+    {name: "浜村鹿野温泉IC南", url: "data/011/index.html", s: "岡木"},
+    {name: "鹿野町河内", url: "data/002/index.html", s: "河内"},
+    {name: "青谷大橋", url: "data/132/index.html", s: "青谷"},
+    {name: "日置川橋西詰", url: "data/074/index.html", s: "青谷"},
+    {name: "青谷町河原", url: "data/101/index.html", s: "青谷町河原"},
+    {name: "青谷町小畑", url: "data/080/index.html", s: "小畑"},
+    {name: "青谷町絹見", url: "data/133/index.html", s: "絹見"},
+    {name: "青谷町桑原", url: "data/102/index.html", s: "桑原"},
+    {name: "栃本郵便局前", url: "data/037/index.html", s: "栃本"},
+    {name: "国府町大石", url: "data/169/index.html", s: "大石"},
+    {name: "国府町上地", url: "data/075/index.html", s: "上地"},
+    {name: "国府町新町", url: "data/164/index.html", s: "新町"},
+    {name: "国府東小学校付近", url: "data/155/index.html", s: "国府町谷"},
+    {name: "国府町山崎", url: "data/168/index.html", s: "山崎"},
+    {name: "河原町河原", url: "data/163/index.html", s: "河原"},
+    {name: "西郷小学校付近", url: "data/171/index.html", s: "牛戸"},
+    {name: "河原町小倉", url: "data/280/index.html", s: "小倉"},
+    {name: "河原町北村", url: "data/065/index.html", s: "北村"},
+    {name: "河原町高福", url: "data/278/index.html", s: "高福"},
+    {name: "用瀬町赤波", url: "data/079/index.html", s: "赤波"},
+    {name: "用瀬町江波", url: "data/103/index.html", s: "江波"},
+    {name: "福部町山湯山", url: "data/258/index.html", s: "山湯山"},
+    {name: "福部町総合支所前", url: "data/259/index.html", s: "福部"},
+    {name: "鳥取市白兎", url: "data/260/index.html", s: "白兎"},
+    {name: "鳥取市南隈", url: "data/261/index.html", s: "南隈"},
+    {name: "鳥取市布勢", url: "data/263/index.html", s: "布勢"},
+    {name: "鳥取市吉方町", url: "data/264/index.html", s: "吉方"},
+    {name: "鳥取市秋里～幸町", url: "data/265/index.html", s: "秋里"},
+    {name: "鳥取市北園", url: "data/249/index.html", s: "北園"},
+    {name: "鳥取市細見", url: "data/250/index.html", s: "細見"}
 ];
 
-const BASE_URL = "https://tori-bousai.jp/yukinavi/";
+const DATA_SOURCE = "https://tori-bousai.jp/yukinavi/tobu/";
+const LINK_BASE = "https://yukinavi.net/i/";
 
 function updateStatus(snowData) {
     const snows = snowData.map(d => parseFloat(d.snow) || 0);
@@ -88,11 +137,10 @@ function updateStatus(snowData) {
 
 async function refreshData() {
     const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '<tr><td colspan="3" class="loading">データを取得中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">最新データを解析中...</td></tr>';
     
     try {
-        const targetUrl = BASE_URL + 'tobu/';
-        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(DATA_SOURCE);
         const response = await fetch(proxyUrl);
         const html = await response.text();
         
@@ -100,8 +148,8 @@ async function refreshData() {
         tbody.innerHTML = '';
         
         pointsData.forEach(p => {
-            // 気温と積雪を抽出するための正規表現（[\s\S]*?で改行を許可）
-            const escaped = p.search.replace(/[()～]/g, '\\$&');
+            // 気温と積雪を抽出（改行・タグをまたいで検索）
+            const escaped = p.s.replace(/[()～]/g, '\\$&');
             const snowMatch = html.match(new RegExp(escaped + '[\\s\\S]*?([0-9.]+?)\\s*cm', 'i'));
             const tempMatch = html.match(new RegExp(escaped + '[\\s\\S]*?([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i'));
             
@@ -113,20 +161,20 @@ async function refreshData() {
             const row = tbody.insertRow();
             const snowColor = parseFloat(snow) > 0 ? '#f59e0b' : '#10b981';
             row.innerHTML = `
-                <td><a href="${BASE_URL}${p.url}" target="_blank" class="point-link">${p.name}</a></td>
+                <td><a href="${LINK_BASE}${p.url}" target="_blank" class="point-link">${p.name}</a></td>
                 <td style="color:${snowColor}; font-weight:bold">${snow}</td>
                 <td>${temp}</td>
             `;
         });
         updateStatus(snowData);
     } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">取得エラー。再試行してください。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">通信エラー。再読み込みしてください。</td></tr>';
     }
     document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
 }
 
 refreshData();
-setInterval(refreshData, 5 * 60 * 1000);
+setInterval(refreshData, 5 * 60 * 1000); // 5分自動更新
 </script>
 </body>
 </html>
