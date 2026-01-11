@@ -5,82 +5,82 @@
 <meta name="viewport" content="width=device-width">
 <title>🚗 鳥取東部雪道ナビ</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;max-width:800px;margin:auto;background:#f8f9fa}
-h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
-.link-box{background:#e3f2fd;border-radius:12px;padding:20px;margin:15px 0;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-.link{color:#1976d2;font-size:16px;font-weight:600;text-decoration:none;display:inline-block;padding:10px 20px;border-radius:25px;background:#bbdefb;transition:all 0.3s}
-.status{display:flex;flex-wrap:wrap;gap:10px;margin:15px 0;padding:15px;border-radius:12px;background:linear-gradient(135deg,#3b82f6 0%,#1e40af 100%);color:white}
-.status-item{text-align:center;flex:1;min-width:100px}
-.status-num{font-size:22px;font-weight:700}
-.status-label{font-size:11px;opacity:0.9}
-.updated{font-size:14px;color:#6c757d;text-align:center;margin:10px 0}
-.btn-update{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:15px;font-weight:600;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-th,td{border:1px solid #dee2e6;padding:12px;text-align:left}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:15px;max-width:800px;margin:auto;background:#f8f9fa}
+h1{font-size:22px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
+.link-box{background:#e3f2fd;border-radius:12px;padding:15px;margin:10px 0;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.05)}
+.link{color:#1976d2;font-size:15px;font-weight:600;text-decoration:none;display:inline-block;padding:8px 16px;border-radius:25px;background:#bbdefb}
+.status{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;padding:15px;border-radius:12px;background:linear-gradient(135deg,#3b82f6 0%,#1e40af 100%);color:white}
+.status-item{text-align:center;flex:1;min-width:80px}
+.status-num{font-size:20px;font-weight:700}
+.status-label{font-size:10px;opacity:0.9}
+.updated{font-size:13px;color:#6c757d;text-align:center;margin:10px 0}
+.btn-update{background:#1d4ed8;color:white;border:none;padding:8px 18px;border-radius:20px;cursor:pointer;font-size:14px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+th,td{border:1px solid #dee2e6;padding:10px;text-align:left}
 th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
 .point-link{color:#1976d2;text-decoration:none;font-weight:bold}
 .loading{text-align:center;padding:30px!important;color:#856404;background:#fff3cd}
-@media(max-width:600px){table{font-size:11px}th,td{padding:8px}h1{font-size:20px}}
+@media(max-width:600px){table{font-size:11px}th,td{padding:8px}h1{font-size:18px}}
 </style>
 </head>
 <body>
 <h1>🚗 鳥取東部雪道ナビ</h1>
 
 <div class="link-box">
-<a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">📋鳥取ゆきみちナビ（本家サイト）</a>
+<a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">📋本家サイト（詳細確認）</a>
 </div>
 
-<div class="status" id="status">
+<div class="status">
     <div class="status-item"><div class="status-num" id="totalPoints">-</div><div class="status-label">監視地点</div></div>
     <div class="status-item"><div class="status-num" id="snowStatus">-</div><div class="status-label">路面状況</div></div>
     <div class="status-item"><div class="status-num" id="avgTemp">-</div><div class="status-label">平均気温</div></div>
     <div class="status-item"><div class="status-num" id="maxSnow">-</div><div class="status-label">最大積雪</div></div>
 </div>
 
-<p class="updated">更新: <span id="updated">--</span> | <button class="btn-update" onclick="refreshData()">🔄 最新情報取得</button></p>
+<p class="updated">更新: <span id="updated">--</span> | <button class="btn-update" onclick="refreshData()">🔄 再読み込み</button></p>
 
 <table id="snowTable">
-    <thead><tr><th>地点 (カメラ詳細)</th><th>積雪(cm)</th><th>路上温度(℃)</th></tr></thead>
-    <tbody id="tableBody"><tr><td colspan="3" class="loading">最新情報を取得中...</td></tr></tbody>
+    <thead><tr><th>地点名</th><th>積雪(cm)</th><th>路上温(℃)</th></tr></thead>
+    <tbody id="tableBody"><tr><td colspan="3" class="loading">情報を取得中...</td></tr></tbody>
 </table>
 
 <script>
-// 地名をご指定いただいた通りの名称で設定しました
-const pointsData = [
-    {name: "鳥取駅前(東品治町)", url: "data/159/index.html", s: "東品治町"},
-    {name: "北園", url: "data/249/index.html", s: "北園"},
-    {name: "海蔵寺(環境大入口)", url: "data/161/index.html", s: "海蔵寺"},
-    {name: "湖山町北(鳥商前)", url: "data/162/index.html", s: "湖山町北"},
-    {name: "細見", url: "data/250/index.html", s: "細見"},
-    {name: "国府町新町(盲学校前)", url: "data/164/index.html", s: "国府町新町"},
-    {name: "南隈(国道9号立体交差)", url: "data/261/index.html", s: "南隈"},
-    {name: "福部町海士(海士交差点)", url: "data/167/index.html", s: "海士"},
-    {name: "八頭町船岡(越路)", url: "data/129/index.html", s: "越路"},
-    {name: "倉田(高路)", url: "data/064/index.html", s: "高路"},
-    {name: "佐治(辰巳峠)", url: "data/039/index.html", s: "佐治"},
-    {name: "青谷IC周辺(絹見)", url: "data/133/index.html", s: "絹見"},
-    {name: "鹿野町河内", url: "data/002/index.html", s: "鹿野町河内"},
-    {name: "河原町河原駅前", url: "data/163/index.html", s: "河原"},
-    {name: "洞谷", url: "data/130/index.html", s: "洞谷"},
-    {name: "徳尾(嶋入口)", url: "data/160/index.html", s: "徳尾"},
-    {name: "岩坪", url: "data/001/index.html", s: "岩坪"},
-    {name: "気高町下光元", url: "data/157/index.html", s: "下光元"},
-    {name: "岩美町浦富(岩美IC付近)", url: "data/152/index.html", s: "岩美町浦富"},
-    {name: "湯山(砂丘入口)", url: "data/165/index.html", s: "湯山"},
-    {name: "百谷ダム入口", url: "data/154/index.html", s: "百谷"},
-    {name: "正蓮寺交差点", url: "data/172/index.html", s: "正蓮寺"},
-    {name: "鳥取市千代水", url: "data/257/index.html", s: "千代水"},
-    {name: "白兎(JR立体交差南側)", url: "data/260/index.html", s: "白兎"},
-    {name: "鳥取市吉方町", url: "data/264/index.html", s: "吉方"},
-    {name: "用瀬町江波", url: "data/103/index.html", s: "江波"}
+// 数字（地点ID）をキーにして、表示名を指定。岩吉などの誤表記も修正しました。
+const pointsMaster = [
+    {id: "159", name: "鳥取駅前(東品治町)"},
+    {id: "249", name: "北園"},
+    {id: "161", name: "海蔵寺(環境大入口)"},
+    {id: "162", name: "湖山町北(鳥商前)"},
+    {id: "250", name: "細見"},
+    {id: "164", name: "国府町新町(盲学校前)"},
+    {id: "261", name: "南隈(国道9号立体)"},
+    {id: "167", name: "福部町海士(海士交差点)"},
+    {id: "129", name: "八頭町船岡(越路)"},
+    {id: "064", name: "倉田(高路)"},
+    {id: "039", name: "佐治(辰巳峠)"},
+    {id: "133", name: "青谷IC周辺(絹見)"},
+    {id: "002", name: "鹿野町河内"},
+    {id: "163", name: "河原町河原駅前"},
+    {id: "130", name: "洞谷"},
+    {id: "160", name: "徳尾(嶋入口)"},
+    {id: "001", name: "岩坪"},
+    {id: "157", name: "気高町下光元"},
+    {id: "152", name: "岩美町浦富(岩美IC)"},
+    {id: "165", name: "湯山(砂丘入口)"},
+    {id: "154", name: "百谷ダム入口"},
+    {id: "172", name: "正蓮寺交差点"},
+    {id: "257", name: "鳥取市千代水"},
+    {id: "260", name: "白兎(JR立体南側)"},
+    {id: "264", name: "鳥取市吉方町"},
+    {id: "103", name: "用瀬町江波"}
 ];
 
 const DATA_SOURCE = "https://tori-bousai.jp/yukinavi/tobu/";
-const LINK_BASE = "https://yukinavi.net/i/";
+const LINK_BASE = "https://yukinavi.net/i/data/";
 
 async function refreshData() {
     const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '<tr><td colspan="3" class="loading">最新情報を取得・解析中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">最新データを解析中...</td></tr>';
     
     try {
         const response = await fetch('https://corsproxy.io/?' + encodeURIComponent(DATA_SOURCE));
@@ -89,30 +89,27 @@ async function refreshData() {
         const snowData = [];
         tbody.innerHTML = '';
         
-        pointsData.forEach(p => {
-            const escaped = p.s.replace(/[()～]/g, '\\$&');
-            const snowRe = new RegExp(escaped + '[\\s\\S]*?路上積雪深\\s*([0-9.]+)?\\s*cm', 'i');
-            const tempRe = new RegExp(escaped + '[\\s\\S]*?路上温度\\s*([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i');
+        pointsMaster.forEach(p => {
+            // 地点番号（例: 159）のリンクが含まれる行を探し、その後のデータを抽出するロジック
+            const pointBlockRe = new RegExp('data/' + p.id + '/index\\.html[\\s\\S]*?路上積雪深\\s*([0-9.]+)?\\s*cm[\\s\\S]*?路上温度\\s*([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i');
+            const match = html.match(pointBlockRe);
             
-            const sm = html.match(snowRe);
-            const tm = html.match(tempRe);
-            
-            const snow = sm && sm[1] ? sm[1] : '0.0';
-            let temp = tm && tm[1] ? tm[1].replace(/[−ー]/g, '-').trim() : '--';
+            const snow = (match && match[1]) ? match[1] : '0.0';
+            let temp = (match && match[2]) ? match[2].replace(/[−ー]/g, '-').trim() : '--';
             
             snowData.push({point: p.name, snow, temp});
             
             const row = tbody.insertRow();
             const snowColor = parseFloat(snow) > 0 ? '#f59e0b' : '#10b981';
             row.innerHTML = `
-                <td><a href="${LINK_BASE}${p.url}" target="_blank" class="point-link">${p.name}</a></td>
+                <td><a href="${LINK_BASE}${p.id}/index.html" target="_blank" class="point-link">${p.name}</a></td>
                 <td style="color:${snowColor}; font-weight:bold">${snow}</td>
                 <td>${temp}</td>
             `;
         });
         updateStatus(snowData);
     } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">通信エラーが発生しました。再試行してください。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">取得に失敗しました。時間をおいてお試しください。</td></tr>';
     }
     document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
 }
@@ -121,7 +118,7 @@ function updateStatus(sd) {
     const s = sd.map(d=>parseFloat(d.snow)||0);
     const t = sd.map(d=>parseFloat(d.temp)).filter(n=>!isNaN(n));
     document.getElementById('totalPoints').textContent = sd.length;
-    document.getElementById('snowStatus').textContent = Math.max(...s,0)===0?'🚗良好':'⚠️雪道注意';
+    document.getElementById('snowStatus').textContent = Math.max(...s,0)===0?'🚗良好':'⚠️注意';
     document.getElementById('avgTemp').textContent = (t.length ? (t.reduce((a,b)=>a+b,0)/t.length).toFixed(1) : '--');
     document.getElementById('maxSnow').textContent = Math.max(...s,0).toFixed(1);
 }
