@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🚗 鳥取東部雪道ナビ (検証モード)</title>
+<title>🚗 鳥取東部雪道ナビ (日時基準版)</title>
 <style>
 body{font-family:sans-serif;padding:15px;max-width:1000px;margin:auto;background:#f8f9fa}
 h1{font-size:22px;text-align:center;color:#1e3a8a}
@@ -12,12 +12,12 @@ h1{font-size:22px;text-align:center;color:#1e3a8a}
 table{width:100%;border-collapse:collapse;background:white;font-size:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
 th,td{border:1px solid #dee2e6;padding:8px;text-align:left}
 th{background:#e3f2fd}
-.debug-text{color:#666;font-family:monospace;font-size:10px;background:#f0f0f0;display:block;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.debug-text{color:#555;font-family:monospace;font-size:10px;background:#f0f0f0;display:block;max-width:350px;white-space:pre-wrap;padding:4px}
 .btn-update{background:#1d4ed8;color:white;border:none;padding:10px;border-radius:20px;cursor:pointer;width:100%;margin:10px 0}
 </style>
 </head>
 <body>
-<h1>🚗 鳥取東部雪道ナビ (検証モード)</h1>
+<h1>🚗 鳥取東部雪道ナビ (日時基準版)</h1>
 
 <div class="status">
     <div class="status-item"><div class="status-num" id="totalPoints">0</div>監視地点</div>
@@ -25,7 +25,7 @@ th{background:#e3f2fd}
     <div class="status-item"><div class="status-num" id="maxSnow">0.0</div>最大積雪</div>
 </div>
 
-<button class="btn-update" onclick="refreshData()">🔄 データを更新して解析元を確認</button>
+<button class="btn-update" onclick="refreshData()">🔄 データを更新して確認</button>
 <p style="font-size:12px;text-align:center">更新: <span id="updated">--</span></p>
 
 <table>
@@ -34,40 +34,41 @@ th{background:#e3f2fd}
             <th>地点名</th>
             <th>積雪(cm)</th>
             <th>温度(℃)</th>
-            <th>解析元テキスト (4列目)</th>
+            <th>読み取った行 (デバッグ)</th>
         </tr>
     </thead>
     <tbody id="tableBody"></tbody>
 </table>
 
 <script>
+// 検索キーワード（生データの行と一致するもの）
 const pointsMaster = [
-    {id: "159", search: "鳥取駅前", name: "鳥取駅前(東品治町)"},
+    {id: "159", search: "鳥取市東品治町【鳥取駅前】", name: "鳥取駅前"},
     {id: "249", search: "鳥取市北園", name: "北園"},
-    {id: "161", search: "環境大入口", name: "海蔵寺(環境大入口)"},
-    {id: "162", search: "鳥取商業高前", name: "湖山町北(鳥商前)"},
+    {id: "161", search: "鳥取市海蔵寺【環境大入口】", name: "海蔵寺(環境大入口)"},
+    {id: "162", search: "鳥取市湖山町北【鳥取商業高前】", name: "湖山町北(鳥商前)"},
     {id: "250", search: "鳥取市細見", name: "細見"},
-    {id: "164", search: "盲学校前", name: "国府町新町(盲学校前)"},
-    {id: "261", search: "南隈", name: "南隈(国道9号)"},
-    {id: "167", search: "海士交差点", name: "海士交差点"},
-    {id: "129", search: "越路", name: "越路"},
-    {id: "064", search: "高路", name: "高路"},
-    {id: "039", search: "辰巳峠", name: "辰巳峠"},
-    {id: "133", search: "絹見", name: "青谷IC周辺"},
+    {id: "164", search: "国府町新町【鳥取盲学校前】", name: "国府町新町(盲学校前)"},
+    {id: "261", search: "鳥取市商栄町～南隈", name: "南隈(国道9号)"},
+    {id: "167", search: "福部町海士【海士交差点】", name: "海士交差点"},
+    {id: "129", search: "鳥取市越路", name: "越路"},
+    {id: "064", search: "鳥取市高路", name: "高路"},
+    {id: "039", search: "佐治町栃原【辰巳峠】", name: "佐治(辰巳峠)"},
+    {id: "133", search: "青谷町絹見", name: "青谷IC周辺"},
     {id: "002", search: "鹿野町河内", name: "鹿野町河内"},
     {id: "163", search: "河原町河原", name: "河原町河原"},
-    {id: "130", search: "洞谷", name: "洞谷"},
-    {id: "160", search: "嶋入口", name: "徳尾(嶋入口)"},
-    {id: "001", search: "岩坪", name: "岩坪"},
-    {id: "157", search: "下光元", name: "下光元"},
-    {id: "152", search: "岩美IC付近", name: "岩美IC付近"},
-    {id: "165", search: "砂丘入口", name: "砂丘入口"},
-    {id: "154", search: "百谷ダム", name: "百谷ダム入口"},
-    {id: "172", search: "正蓮寺", name: "正蓮寺交差点"},
-    {id: "257", search: "千代水", name: "千代水"},
-    {id: "260", search: "白兎", name: "白兎"},
-    {id: "264", search: "吉方町", name: "吉方町"},
-    {id: "103", search: "江波", name: "用瀬町江波"}
+    {id: "130", search: "鳥取市洞谷", name: "洞谷"},
+    {id: "160", search: "鳥取市徳尾【嶋入口交差点】", name: "徳尾(嶋入口)"},
+    {id: "001", search: "鳥取市岩坪", name: "岩坪"},
+    {id: "157", search: "気高町下光元", name: "下光元"},
+    {id: "152", search: "岩美町浦富【岩美IC付近】", name: "岩美IC付近"},
+    {id: "165", search: "福部町湯山【鳥取砂丘入口】", name: "砂丘入口"},
+    {id: "154", search: "鳥取市百谷【百谷ダム入口】", name: "百谷ダム入口"},
+    {id: "172", search: "鳥取市正蓮寺【正蓮寺交差点】", name: "正蓮寺交差点"},
+    {id: "257", search: "鳥取市千代水", name: "千代水"},
+    {id: "260", search: "鳥取市白兎", name: "白兎"},
+    {id: "264", search: "鳥取市吉方町", name: "吉方町"},
+    {id: "103", search: "用瀬町江波", name: "用瀬町江波"}
 ];
 
 async function refreshData() {
@@ -77,40 +78,76 @@ async function refreshData() {
     try {
         const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://tori-bousai.jp/yukinavi/tobu/'));
         const html = await response.text();
-        // 解析をしやすくするため、タグをスペースに変えて短く整理
-        const cleanText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
         
+        // HTMLを「行ごとのリスト」に変換（タグは除去）
+        let formattedText = html.replace(/<\/(tr|div|p|li|dd)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n');
+        formattedText = formattedText.replace(/<[^>]+>/g, '');
+        const lines = formattedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
         tbody.innerHTML = '';
         let results = [];
 
         pointsMaster.forEach(p => {
-            const idx = cleanText.indexOf(p.search);
-            let snow = "0.0", temp = "--", snippet = "見つかりません";
+            let snow = "--";
+            let temp = "--";
+            let debugLog = "地点名が見つかりません";
 
-            if (idx !== -1) {
-                // 地点名の後ろ300文字を抽出
-                snippet = cleanText.substring(idx, idx + 300);
-                const sM = snippet.match(/路上積雪深\s*([\d.]+)/);
-                const tM = snippet.match(/路上温度\s*([−-ー]?[\d.]+)/);
-                if(sM) snow = sM[1];
-                if(tM) temp = tM[1].replace(/[−ー]/g, '-');
+            // 1. まず「地点名」の行を探す
+            const nameIndex = lines.findIndex(line => line.includes(p.search));
+
+            if (nameIndex !== -1) {
+                // 2. 地点名の行から下へ向かって「観測日時」を探す（最大10行先まで）
+                let dateIndex = -1;
+                for (let i = nameIndex; i < Math.min(nameIndex + 10, lines.length); i++) {
+                    if (lines[i].includes("観測日時")) {
+                        dateIndex = i;
+                        break;
+                    }
+                }
+
+                if (dateIndex !== -1) {
+                    // 3. 「観測日時」が見つかったら、その下にある行だけをデータとして採用する
+                    // （日時行を含めて、下の5行分くらいを取得）
+                    const dataLines = lines.slice(dateIndex, dateIndex + 6);
+                    
+                    // 4列目に表示（これが証拠になります）
+                    debugLog = dataLines.join('\n'); 
+
+                    dataLines.forEach(line => {
+                        // 積雪データ抽出
+                        if (line.includes("路上積雪深")) {
+                            const m = line.match(/([\d.]+)/);
+                            if (m) snow = m[1];
+                        }
+                        // 温度データ抽出
+                        if (line.includes("路上温度")) {
+                            const m = line.match(/([−-ー]?[\d.]+)/);
+                            if (m) temp = m[1].replace(/[−ー]/g, '-');
+                        }
+                    });
+                } else {
+                    debugLog = `地点名「${p.search}」は見つかりましたが、近くに「観測日時」がありませんでした。`;
+                }
             }
 
-            results.push({snow, temp});
+            results.push({snow: parseFloat(snow)||0, temp: parseFloat(temp)});
             const row = tbody.insertRow();
+            
             row.innerHTML = `
-                <td>${p.name}</td>
-                <td style="font-weight:bold; color:${parseFloat(snow)>0?'orange':'green'}">${snow}</td>
+                <td><a href="https://yukinavi.net/i/data/${p.id}/index.html" target="_blank">${p.name}</a></td>
+                <td style="font-weight:bold; color:${parseFloat(snow)>0?'orange':'#10b981'}">${snow}</td>
                 <td>${temp}</td>
-                <td><span class="debug-text">${snippet}</span></td>
+                <td><span class="debug-text">${debugLog}</span></td>
             `;
         });
 
-        // 統計更新
         document.getElementById('totalPoints').textContent = results.length;
-        const sList = results.map(r=>parseFloat(r.snow)||0);
+        const sList = results.map(r=>r.snow);
         document.getElementById('maxSnow').textContent = Math.max(...sList).toFixed(1);
+        const tList = results.map(r=>r.temp).filter(n => !isNaN(n));
+        document.getElementById('avgTemp').textContent = tList.length ? (tList.reduce((a,b)=>a+b,0)/tList.length).toFixed(1) : '--';
         document.getElementById('updated').textContent = new Date().toLocaleTimeString();
+
     } catch (e) {
         tbody.innerHTML = '<tr><td colspan="4">エラー発生</td></tr>';
     }
