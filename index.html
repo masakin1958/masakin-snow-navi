@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<title>🚗鳥取東部雪道ナビ (Proxy版)</title>
+<title>🚗鳥取東部雪道ナビ (詳細リンク版)</title>
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;max-width:800px;margin:auto;background:#f8f9fa}
 h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
@@ -16,83 +16,71 @@ h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
 .status-label{font-size:12px;margin-top:4px;opacity:0.9}
 .updated{font-size:14px;color:#6c757d;text-align:center;margin:15px 0}
 .btn-update{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:12px 24px;border-radius:25px;cursor:pointer;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(59,130,246,0.3);transition:all 0.2s;margin:5px}
-.btn-update:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(59,130,246,0.4)}
-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:15px;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:15px;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);background:white}
 th,td{border:1px solid #dee2e6;padding:12px;text-align:left;vertical-align:middle}
 th{background:linear-gradient(135deg,#e3f2fd,#bbdefb);font-weight:600;color:#1e3a8a}
 tr:nth-child(even){background:#f8f9fa}
-tr:hover{background:#e3f2fd}
-.loading{background:#fff3cd;color:#856404;text-align:center;font-weight:500;padding:20px!important;border-radius:12px}
-@media(max-width:600px){table{font-size:12px}th,td{padding:8px}body{padding:15px}h1{font-size:20px}}
+.point-link{color:#1976d2;text-decoration:none;font-weight:600}
+.point-link:hover{text-decoration:underline}
+.loading{background:#fff3cd;color:#856404;text-align:center;padding:20px!important}
+@media(max-width:600px){table{font-size:12px}th,td{padding:8px}h1{font-size:20px}}
 </style>
 </head>
 <body>
 <h1>🚗 鳥取東部雪道ナビ</h1>
 
 <div class="link-box">
-<a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">
-📋鳥取ゆきみちナビ | 詳細情報はこちら
-</a>
+<a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">📋鳥取ゆきみちナビ 本家サイト</a>
 </div>
 
 <div class="status" id="status">
-    <div class="status-item">
-        <div class="status-num" id="totalPoints">-</div>
-        <div class="status-label">監視地点</div>
-    </div>
-    <div class="status-item">
-        <div class="status-num" id="snowStatus">-</div>
-        <div class="status-label">積雪状況</div>
-    </div>
-    <div class="status-item">
-        <div class="status-num" id="avgTemp">-</div>
-        <div class="status-label">平均気温</div>
-    </div>
-    <div class="status-item">
-        <div class="status-num" id="maxSnow">-</div>
-        <div class="status-label">最大積雪</div>
-    </div>
+    <div class="status-item"><div class="status-num" id="totalPoints">-</div><div class="status-label">監視地点</div></div>
+    <div class="status-item"><div class="status-num" id="snowStatus">-</div><div class="status-label">積雪状況</div></div>
+    <div class="status-item"><div class="status-num" id="avgTemp">-</div><div class="status-label">平均気温</div></div>
+    <div class="status-item"><div class="status-num" id="maxSnow">-</div><div class="status-label">最大積雪</div></div>
 </div>
 
-<p class="updated">
-更新: <span id="updated">--</span> | 
-<button class="btn-update" onclick="refreshData()">🔄 最新情報取得</button>
-</p>
+<p class="updated">更新: <span id="updated">--</span> | <button class="btn-update" onclick="refreshData()">🔄 最新情報取得</button></p>
 
 <table id="snowTable">
-    <thead><tr><th>地点</th><th>積雪(cm)</th><th>温度(℃)</th></tr></thead>
-    <tbody id="tableBody">
-        <tr><td colspan="3" class="loading">自動取得中（初回5秒）</td></tr>
-    </tbody>
+    <thead><tr><th>地点 (詳細カメラへ)</th><th>積雪(cm)</th><th>温度(℃)</th></tr></thead>
+    <tbody id="tableBody"><tr><td colspan="3" class="loading">データ読み込み中...</td></tr></tbody>
 </table>
 
 <script>
-// 監視地点リスト
-const points = [
-    "鳥取駅前(東品治町)","北園","海蔵寺","湖山町北","細見","国府町新町","商栄町～南隈",
-    "若桜町福部","智頭町智頭","八頭町船岡","倉田(山上)","佐治(上日高)","青谷IC周辺",
-    "鹿野町河内","河原町河原駅前","用瀬町中心","洞谷","徳尾(嶋入口)","岩坪",
-    "福部町海士","気高町下光元","岩美町浦富","湯山(砂丘入口)","百谷ダム入口","越路","高路"
+// 地点リストとリンク先のデータ
+const pointsData = [
+    {name: "鳥取駅前", url: "data/159/index.html", search: "鳥取駅前"},
+    {name: "北園", url: "data/249/index.html", search: "北園"},
+    {name: "環境大入口(海蔵寺)", url: "data/161/index.html", search: "海蔵寺"},
+    {name: "鳥取商業高前", url: "data/162/index.html", search: "湖山町北"},
+    {name: "細見", url: "data/250/index.html", search: "細見"},
+    {name: "鳥取盲学校前(国府町)", url: "data/164/index.html", search: "国府町新町"},
+    {name: "南隈", url: "data/261/index.html", search: "南隈"},
+    {name: "鳥取砂丘入口", url: "data/165/index.html", search: "湯山"},
+    {name: "海士交差点", url: "data/167/index.html", search: "海士"},
+    {name: "百谷ダム入口", url: "data/154/index.html", search: "百谷"},
+    {name: "鳥取市越路", url: "data/129/index.html", search: "越路"},
+    {name: "鳥取市高路", url: "data/064/index.html", search: "高路"},
+    {name: "嶋入口交差点(徳尾)", url: "data/160/index.html", search: "徳尾"},
+    {name: "鳥取市岩坪", url: "data/001/index.html", search: "岩坪"},
+    {name: "鹿野町河内", url: "data/002/index.html", search: "河内"},
+    {name: "気高町下光元", url: "data/157/index.html", search: "下光元"},
+    {name: "青谷IC周辺(絹見)", url: "data/133/index.html", search: "絹見"},
+    {name: "辰巳峠(佐治町)", url: "data/039/index.html", search: "佐治"},
+    {name: "洞谷", url: "data/130/index.html", search: "洞谷"}
 ];
 
-function updateStatus(snowData) {
-    const total = snowData.length;
-    const snows = snowData.map(d => parseFloat(d.snow) || 0).filter(n => !isNaN(n));
-    const temps = snowData.map(d => parseFloat(d.temp) || 0).filter(n => !isNaN(n));
-    
-    const avgSnow = snows.reduce((a,b)=>a+b,0)/snows.length || 0;
-    const avgTemp = temps.reduce((a,b)=>a+b,0)/temps.length || 0;
-    const maxSnow = Math.max(...snows);
-    
-    const snowStatus = avgSnow === 0 ? '🚗路面良好' : avgSnow < 1 ? '❄️微残雪' : avgSnow < 5 ? '⚠️注意' : '🚨大雪';
-    
-    // 背景色の変化（雪がある場合はオレンジ、激しい場合は赤など）
-    const statusEl = document.getElementById('status');
-    if (maxSnow > 10) statusEl.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
-    else if (maxSnow > 0) statusEl.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-    else statusEl.style.background = 'linear-gradient(135deg, #3b82f6, #1e40af)';
+const BASE_URL = "https://tori-bousai.jp/yukinavi/";
 
-    document.getElementById('totalPoints').textContent = total;
+function updateStatus(snowData) {
+    const snows = snowData.map(d => parseFloat(d.snow) || 0);
+    const temps = snowData.map(d => parseFloat(d.temp)).filter(n => !isNaN(n));
+    const avgTemp = temps.length ? temps.reduce((a,b)=>a+b,0)/temps.length : 0;
+    const maxSnow = Math.max(...snows, 0);
+    const snowStatus = maxSnow === 0 ? '🚗路面良好' : maxSnow < 5 ? '⚠️注意' : '🚨大雪';
+    
+    document.getElementById('totalPoints').textContent = snowData.length;
     document.getElementById('snowStatus').textContent = snowStatus;
     document.getElementById('avgTemp').textContent = avgTemp.toFixed(1);
     document.getElementById('maxSnow').textContent = maxSnow.toFixed(1);
@@ -100,49 +88,44 @@ function updateStatus(snowData) {
 
 async function refreshData() {
     const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '<tr><td colspan="3" class="loading">データを取得しています...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">データを取得中...</td></tr>';
     
     try {
-        // 【修正ポイント】CORSプロキシを経由させる
-        const targetUrl = 'https://tori-bousai.jp/yukinavi/tobu/';
+        const targetUrl = BASE_URL + 'tobu/';
         const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
-        
         const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('通信失敗');
         const html = await response.text();
         
         const snowData = [];
         tbody.innerHTML = '';
         
-        points.forEach(point => {
-            // 正規表現で地点名に続く積雪量と気温を抽出
-            // 実際のHTML構造に合わせて調整が必要になる場合があります
-            const snowMatch = html.match(new RegExp(point.replace(/[()～]/g, '\\$&') + '.*?([0-9.]+?)\\s*cm', 'i'));
-            const tempMatch = html.match(new RegExp(point.replace(/[()～]/g, '\\$&') + '.*?([0-9.-]+?)\\s*℃', 'i'));
+        pointsData.forEach(p => {
+            // 気温と積雪を抽出するための正規表現（[\s\S]*?で改行を許可）
+            const escaped = p.search.replace(/[()～]/g, '\\$&');
+            const snowMatch = html.match(new RegExp(escaped + '[\\s\\S]*?([0-9.]+?)\\s*cm', 'i'));
+            const tempMatch = html.match(new RegExp(escaped + '[\\s\\S]*?([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i'));
             
             const snow = snowMatch ? snowMatch[1] : '0.0';
-            const temp = tempMatch ? tempMatch[1] : '--';
+            let temp = tempMatch ? tempMatch[1].replace(/[−ー]/g, '-').trim() : '--';
             
-            snowData.push({point, snow, temp});
+            snowData.push({point: p.name, snow, temp});
             
             const row = tbody.insertRow();
-            // 雪がある場合はオレンジ色、なければ緑色にする
             const snowColor = parseFloat(snow) > 0 ? '#f59e0b' : '#10b981';
-            row.innerHTML = `<td style="font-weight:500">${point}</td><td style="color:${snowColor}; font-weight:bold">${snow}</td><td>${temp}</td>`;
+            row.innerHTML = `
+                <td><a href="${BASE_URL}${p.url}" target="_blank" class="point-link">${p.name}</a></td>
+                <td style="color:${snowColor}; font-weight:bold">${snow}</td>
+                <td>${temp}</td>
+            `;
         });
-        
         updateStatus(snowData);
     } catch(e) {
-        console.error(e);
-        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="background:#fee2e2; color:#b91c1c">データ取得エラーが発生しました。しばらく待ってから再試行してください。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">取得エラー。再試行してください。</td></tr>';
     }
-    
     document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
 }
 
-// 初回起動
 refreshData();
-// 5分ごとに自動更新
 setInterval(refreshData, 5 * 60 * 1000);
 </script>
 </body>
