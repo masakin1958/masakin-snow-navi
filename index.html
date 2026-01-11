@@ -24,6 +24,22 @@
         font-weight: bold;
     }
 
+    /* リンクボタンのスタイル */
+    .link-box { margin: 15px 0; text-align: center; }
+    .link {
+        display: block; /* 幅いっぱいに広げる */
+        background: #1d4ed8;
+        color: white;
+        text-decoration: none;
+        padding: 12px;
+        border-radius: 30px;
+        font-weight: bold;
+        font-size: 14px;
+        transition: background 0.3s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .link:hover { background: #1e3a8a; }
+
     /* テーブルのスタイル */
     table{width:100%; border-collapse:collapse; background:white; font-size:14px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden;}
     th,td{border-bottom:1px solid #dee2e6; padding:12px 8px; text-align:left; vertical-align: middle;}
@@ -33,8 +49,6 @@
     .val-snow { font-weight:bold; font-size: 15px; }
     .val-temp { font-size: 15px; }
     
-    .btn-update{background:#1d4ed8; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; width:100%; margin:10px 0; font-weight:bold; font-size:14px; transition: background 0.3s;}
-    .btn-update:hover{background:#1e3a8a;}
 </style>
 </head>
 <body>
@@ -50,7 +64,9 @@
     </script>
 </div>
 
-<button class="btn-update" onclick="refreshData()">🔄 最新データに更新</button>
+<div class="link-box">
+    <a href="https://tori-bousai.jp/yukinavi/" class="link" target="_blank">🚗 鳥取ゆきみちナビ 詳細情報はこちら</a>
+</div>
 
 <table>
     <thead>
@@ -162,7 +178,7 @@ async function refreshData() {
                 snowColor = "#d32f2f"; // 赤
             }
 
-            // リンク先を修正 (detail.php?id=...)
+            // リンク先を detail.php?id=... に修正
             row.innerHTML = `
                 <td><a href="https://tori-bousai.jp/yukinavi/tobu/detail.php?id=${p.id}" target="_blank" style="text-decoration:none; color:#1d4ed8; font-weight:bold;">${p.name}</a></td>
                 <td class="val-snow" style="color:${snowColor}">${snowStr}</td>
