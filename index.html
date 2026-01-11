@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<title>🚗鳥取東部雪道ナビ</title>
+<title>🚗鳥取東部雪道ナビ (Proxy版)</title>
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;max-width:800px;margin:auto;background:#f8f9fa}
 h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
@@ -67,6 +67,7 @@ tr:hover{background:#e3f2fd}
 </table>
 
 <script>
+// 監視地点リスト
 const points = [
     "鳥取駅前(東品治町)","北園","海蔵寺","湖山町北","細見","国府町新町","商栄町～南隈",
     "若桜町福部","智頭町智頭","八頭町船岡","倉田(山上)","佐治(上日高)","青谷IC周辺",
@@ -85,6 +86,12 @@ function updateStatus(snowData) {
     
     const snowStatus = avgSnow === 0 ? '🚗路面良好' : avgSnow < 1 ? '❄️微残雪' : avgSnow < 5 ? '⚠️注意' : '🚨大雪';
     
+    // 背景色の変化（雪がある場合はオレンジ、激しい場合は赤など）
+    const statusEl = document.getElementById('status');
+    if (maxSnow > 10) statusEl.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+    else if (maxSnow > 0) statusEl.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+    else statusEl.style.background = 'linear-gradient(135deg, #3b82f6, #1e40af)';
+
     document.getElementById('totalPoints').textContent = total;
     document.getElementById('snowStatus').textContent = snowStatus;
     document.getElementById('avgTemp').textContent = avgTemp.toFixed(1);
@@ -93,37 +100,49 @@ function updateStatus(snowData) {
 
 async function refreshData() {
     const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '<tr><td colspan="3" class="loading">取得中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">データを取得しています...</td></tr>';
     
     try {
-        const response = await fetch('https://tori-bousai.jp/yukinavi/tobu/');
+        // 【修正ポイント】CORSプロキシを経由させる
+        const targetUrl = 'https://tori-bousai.jp/yukinavi/tobu/';
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+        
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('通信失敗');
         const html = await response.text();
         
         const snowData = [];
         tbody.innerHTML = '';
         
         points.forEach(point => {
-            const snowMatch = html.match(new RegExp(point.replace(/[()～]/g, '\\$&') + '.*?([0-9.]+?)[cm\\s]', 'i'));
-            const tempMatch = html.match(new RegExp(point.replace(/[()～]/g, '\\$&') + '.*?([0-9.-]+?)[℃]', 'i'));
+            // 正規表現で地点名に続く積雪量と気温を抽出
+            // 実際のHTML構造に合わせて調整が必要になる場合があります
+            const snowMatch = html.match(new RegExp(point.replace(/[()～]/g, '\\$&') + '.*?([0-9.]+?)\\s*cm', 'i'));
+            const tempMatch = html.match(new RegExp(point.replace(/[()～]/g, '\\$&') + '.*?([0-9.-]+?)\\s*℃', 'i'));
             
-            const snow = snowMatch?.[1] || 'N/A';
-            const temp = tempMatch?.[1] || 'N/A';
+            const snow = snowMatch ? snowMatch[1] : '0.0';
+            const temp = tempMatch ? tempMatch[1] : '--';
+            
             snowData.push({point, snow, temp});
             
             const row = tbody.insertRow();
-            row.innerHTML = `<td style="font-weight:500">${point}</td><td style="color:${snow==='0.0'?'#10b981':'#f59e0b'}">${snow}</td><td>${temp}</td>`;
+            // 雪がある場合はオレンジ色、なければ緑色にする
+            const snowColor = parseFloat(snow) > 0 ? '#f59e0b' : '#10b981';
+            row.innerHTML = `<td style="font-weight:500">${point}</td><td style="color:${snowColor}; font-weight:bold">${snow}</td><td>${temp}</td>`;
         });
         
         updateStatus(snowData);
     } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading">通信エラー。🔄ボタンで再試行</td></tr>';
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="background:#fee2e2; color:#b91c1c">データ取得エラーが発生しました。しばらく待ってから再試行してください。</td></tr>';
     }
     
     document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
 }
 
-// 初回自動取得＋5分ごと更新
+// 初回起動
 refreshData();
+// 5分ごとに自動更新
 setInterval(refreshData, 5 * 60 * 1000);
 </script>
 </body>
