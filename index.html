@@ -13,14 +13,14 @@ h1{font-size:24px;margin:10px 0;color:#1e3a8a;text-align:center;font-weight:700}
 .status-item{text-align:center;flex:1;min-width:100px}
 .status-num{font-size:22px;font-weight:700}
 .status-label{font-size:11px;opacity:0.9}
-.updated{font-size:13px;color:#6c757d;text-align:center;margin:10px 0}
+.updated{font-size:14px;color:#6c757d;text-align:center;margin:10px 0}
 .btn-update{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:15px;font-weight:600;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
 table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
 th,td{border:1px solid #dee2e6;padding:12px;text-align:left}
 th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
 .point-link{color:#1976d2;text-decoration:none;font-weight:bold}
 .loading{text-align:center;padding:30px!important;color:#856404;background:#fff3cd}
-@media(max-width:600px){table{font-size:12px}th,td{padding:8px}h1{font-size:20px}}
+@media(max-width:600px){table{font-size:11px}th,td{padding:8px}h1{font-size:20px}}
 </style>
 </head>
 <body>
@@ -32,7 +32,7 @@ th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
 
 <div class="status" id="status">
     <div class="status-item"><div class="status-num" id="totalPoints">-</div><div class="status-label">監視地点</div></div>
-    <div class="status-item"><div class="status-num" id="snowStatus">-</div><div class="status-label">積雪状況</div></div>
+    <div class="status-item"><div class="status-num" id="snowStatus">-</div><div class="status-label">路面状況</div></div>
     <div class="status-item"><div class="status-num" id="avgTemp">-</div><div class="status-label">平均気温</div></div>
     <div class="status-item"><div class="status-num" id="maxSnow">-</div><div class="status-label">最大積雪</div></div>
 </div>
@@ -40,64 +40,50 @@ th{background:#e3f2fd;color:#1e3a8a;position:sticky;top:0}
 <p class="updated">更新: <span id="updated">--</span> | <button class="btn-update" onclick="refreshData()">🔄 最新情報取得</button></p>
 
 <table id="snowTable">
-    <thead><tr><th>地点 (カメラ詳細)</th><th>積雪(cm)</th><th>気温(℃)</th></tr></thead>
-    <tbody id="tableBody"><tr><td colspan="3" class="loading">データ取得中...</td></tr></tbody>
+    <thead><tr><th>地点 (カメラ詳細)</th><th>積雪(cm)</th><th>路上温度(℃)</th></tr></thead>
+    <tbody id="tableBody"><tr><td colspan="3" class="loading">最新情報を取得中...</td></tr></tbody>
 </table>
 
 <script>
-// 26箇所の厳選リスト（名称とURLを最適化）
+// 地名をご指定いただいた通りの名称で設定しました
 const pointsData = [
-    {name: "鳥取駅前", url: "data/159/index.html", s: "鳥取駅前"},
+    {name: "鳥取駅前(東品治町)", url: "data/159/index.html", s: "東品治町"},
     {name: "北園", url: "data/249/index.html", s: "北園"},
-    {name: "環境大入口(海蔵寺)", url: "data/161/index.html", s: "海蔵寺"},
-    {name: "鳥取商業高前", url: "data/162/index.html", s: "湖山町北"},
+    {name: "海蔵寺(環境大入口)", url: "data/161/index.html", s: "海蔵寺"},
+    {name: "湖山町北(鳥商前)", url: "data/162/index.html", s: "湖山町北"},
     {name: "細見", url: "data/250/index.html", s: "細見"},
-    {name: "国府町新町", url: "data/164/index.html", s: "国府町新町"},
-    {name: "南隈", url: "data/261/index.html", s: "南隈"},
-    {name: "福部町海士", url: "data/167/index.html", s: "海士"},
+    {name: "国府町新町(盲学校前)", url: "data/164/index.html", s: "国府町新町"},
+    {name: "南隈(国道9号立体交差)", url: "data/261/index.html", s: "南隈"},
+    {name: "福部町海士(海士交差点)", url: "data/167/index.html", s: "海士"},
     {name: "八頭町船岡(越路)", url: "data/129/index.html", s: "越路"},
     {name: "倉田(高路)", url: "data/064/index.html", s: "高路"},
-    {name: "辰巳峠(佐治)", url: "data/039/index.html", s: "佐治"},
-    {name: "青谷IC周辺", url: "data/133/index.html", s: "絹見"},
-    {name: "鹿野町河内", url: "data/002/index.html", s: "河内"},
-    {name: "河原町河原", url: "data/163/index.html", s: "河原"},
+    {name: "佐治(辰巳峠)", url: "data/039/index.html", s: "佐治"},
+    {name: "青谷IC周辺(絹見)", url: "data/133/index.html", s: "絹見"},
+    {name: "鹿野町河内", url: "data/002/index.html", s: "鹿野町河内"},
+    {name: "河原町河原駅前", url: "data/163/index.html", s: "河原"},
     {name: "洞谷", url: "data/130/index.html", s: "洞谷"},
-    {name: "嶋入口(徳尾)", url: "data/160/index.html", s: "徳尾"},
+    {name: "徳尾(嶋入口)", url: "data/160/index.html", s: "徳尾"},
     {name: "岩坪", url: "data/001/index.html", s: "岩坪"},
     {name: "気高町下光元", url: "data/157/index.html", s: "下光元"},
-    {name: "岩美町浦富", url: "data/152/index.html", s: "岩美町浦富"},
+    {name: "岩美町浦富(岩美IC付近)", url: "data/152/index.html", s: "岩美町浦富"},
     {name: "湯山(砂丘入口)", url: "data/165/index.html", s: "湯山"},
     {name: "百谷ダム入口", url: "data/154/index.html", s: "百谷"},
     {name: "正蓮寺交差点", url: "data/172/index.html", s: "正蓮寺"},
     {name: "鳥取市千代水", url: "data/257/index.html", s: "千代水"},
-    {name: "白兎", url: "data/260/index.html", s: "白兎"},
-    {name: "吉方", url: "data/264/index.html", s: "吉方"},
+    {name: "白兎(JR立体交差南側)", url: "data/260/index.html", s: "白兎"},
+    {name: "鳥取市吉方町", url: "data/264/index.html", s: "吉方"},
     {name: "用瀬町江波", url: "data/103/index.html", s: "江波"}
 ];
 
 const DATA_SOURCE = "https://tori-bousai.jp/yukinavi/tobu/";
 const LINK_BASE = "https://yukinavi.net/i/";
 
-function updateStatus(snowData) {
-    const snows = snowData.map(d => parseFloat(d.snow) || 0);
-    const temps = snowData.map(d => parseFloat(d.temp)).filter(n => !isNaN(n));
-    const avgTemp = temps.length ? temps.reduce((a,b)=>a+b,0)/temps.length : 0;
-    const maxSnow = Math.max(...snows, 0);
-    const snowStatus = maxSnow === 0 ? '🚗路面良好' : maxSnow < 5 ? '⚠️注意' : '🚨大雪';
-    
-    document.getElementById('totalPoints').textContent = snowData.length;
-    document.getElementById('snowStatus').textContent = snowStatus;
-    document.getElementById('avgTemp').textContent = avgTemp.toFixed(1);
-    document.getElementById('maxSnow').textContent = maxSnow.toFixed(1);
-}
-
 async function refreshData() {
     const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '<tr><td colspan="3" class="loading">最新情報を解析中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">最新情報を取得・解析中...</td></tr>';
     
     try {
-        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(DATA_SOURCE);
-        const response = await fetch(proxyUrl);
+        const response = await fetch('https://corsproxy.io/?' + encodeURIComponent(DATA_SOURCE));
         const html = await response.text();
         
         const snowData = [];
@@ -105,12 +91,14 @@ async function refreshData() {
         
         pointsData.forEach(p => {
             const escaped = p.s.replace(/[()～]/g, '\\$&');
-            // タグの内部にある数値をより確実に拾うロジック
-            const snowMatch = html.match(new RegExp(escaped + '[^>]*?>\\s*([0-9.]+?)\\s*cm', 'i'));
-            const tempMatch = html.match(new RegExp(escaped + '[^>]*?>\\s*([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i'));
+            const snowRe = new RegExp(escaped + '[\\s\\S]*?路上積雪深\\s*([0-9.]+)?\\s*cm', 'i');
+            const tempRe = new RegExp(escaped + '[\\s\\S]*?路上温度\\s*([−-ー]?\\s*[0-9.]+?)\\s*℃', 'i');
             
-            const snow = snowMatch ? snowMatch[1] : '0.0';
-            let temp = tempMatch ? tempMatch[1].replace(/[−ー]/g, '-').trim() : '--';
+            const sm = html.match(snowRe);
+            const tm = html.match(tempRe);
+            
+            const snow = sm && sm[1] ? sm[1] : '0.0';
+            let temp = tm && tm[1] ? tm[1].replace(/[−ー]/g, '-').trim() : '--';
             
             snowData.push({point: p.name, snow, temp});
             
@@ -124,9 +112,18 @@ async function refreshData() {
         });
         updateStatus(snowData);
     } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">通信エラー。ボタンで再試行してください。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="loading" style="color:red">通信エラーが発生しました。再試行してください。</td></tr>';
     }
     document.getElementById('updated').textContent = new Date().toLocaleString('ja-JP');
+}
+
+function updateStatus(sd) {
+    const s = sd.map(d=>parseFloat(d.snow)||0);
+    const t = sd.map(d=>parseFloat(d.temp)).filter(n=>!isNaN(n));
+    document.getElementById('totalPoints').textContent = sd.length;
+    document.getElementById('snowStatus').textContent = Math.max(...s,0)===0?'🚗良好':'⚠️雪道注意';
+    document.getElementById('avgTemp').textContent = (t.length ? (t.reduce((a,b)=>a+b,0)/t.length).toFixed(1) : '--');
+    document.getElementById('maxSnow').textContent = Math.max(...s,0).toFixed(1);
 }
 
 refreshData();
