@@ -1,138 +1,256 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鳥取東部雪道ナビ (修正版)</title>
-    <style>
-        body { font-family: sans-serif; background-color: #f4f7f9; margin: 0; padding: 10px; color: #333; }
-        h1 { text-align: center; color: #004a99; font-size: 1.4rem; margin-bottom: 15px; }
-        .update-info { text-align: right; font-size: 0.8rem; color: #666; margin-bottom: 10px; }
-        .group-box { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; border: 1px solid #d1d9e0; }
-        .group-header { background: #004a99; color: #fff; padding: 10px 15px; font-weight: bold; font-size: 1rem; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 8px; border-bottom: 1px solid #eee; text-align: center; }
-        th { background: #f8f9fa; font-size: 0.8rem; color: #555; }
-        .name-td { text-align: left; font-weight: bold; width: 30%; }
-        .snow-td { color: #007bff; font-weight: bold; font-size: 1.1rem; }
-        .temp-td { color: #d9534f; }
-        .note-td { text-align: left; font-size: 0.8rem; color: #777; width: 35%; }
-        .highlight { background-color: #fff9c4; }
-        .footer { text-align: center; margin: 20px 0; font-size: 0.9rem; line-height: 2; }
-        .footer a { color: #004a99; text-decoration: none; font-weight: bold; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鳥取東部雪道ナビ (5グループ版)</title>
+<style>
+    /* --- デザイン設定 --- */
+    :root {
+        --main-blue: #004a99;
+        --bg-gray: #f0f2f5;
+        --snow-highlight: #fff9c4; /* 雪がある時の背景色 */
+    }
+    body { font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; background: var(--bg-gray); padding: 10px; margin: 0; color: #333; }
+    h1 { text-align: center; color: var(--main-blue); font-size: 1.5rem; margin-bottom: 10px; }
+    
+    /* 更新時刻エリア */
+    .status-bar { text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 20px; font-weight: bold; }
+
+    /* グループ（カード）のスタイル */
+    .group-card {
+        background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 25px; overflow: hidden; border: 1px solid #dee2e6;
+    }
+    .group-header {
+        background: var(--main-blue); color: white; padding: 10px 15px;
+        font-weight: bold; font-size: 1.1rem;
+    }
+
+    /* テーブルのスタイル */
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: center; vertical-align: middle; }
+    th { background: #f8f9fa; color: #555; font-size: 0.85rem; }
+    
+    .cell-name { text-align: left; width: 30%; font-weight: bold; }
+    .cell-snow { width: 15%; font-weight: bold; font-size: 1.1rem; color: #007bff; }
+    .cell-temp { width: 15%; color: #d32f2f; }
+    .cell-note { text-align: left; width: 40%; font-size: 0.8rem; color: #666; }
+    
+    .link-text { text-decoration: none; color: inherit; }
+    .link-text:hover { text-decoration: underline; color: var(--main-blue); }
+
+    /* 雪がある行の強調 */
+    .has-snow { background-color: var(--snow-highlight); }
+
+    /* フッター */
+    .footer { text-align: center; margin-top: 30px; padding-bottom: 20px; }
+    .btn-link {
+        display: inline-block; background: var(--main-blue); color: white; text-decoration: none;
+        padding: 10px 20px; border-radius: 20px; font-weight: bold; margin: 5px; font-size: 0.9rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+</style>
 </head>
 <body>
 
     <h1>🚗 鳥取東部雪道ナビ</h1>
-    <div id="last-update" class="update-info">最新データを読み込み中...</div>
+    
+    <div id="headerDate" class="status-bar">データ読み込み中...</div>
 
-    <div id="content-area">
-        </div>
+    <div id="main-container"></div>
 
     <div class="footer">
-        <hr>
-        <a href="https://tori-bousai.jp/yukinavi/" target="_blank">▷ 鳥取ゆきみちナビ（詳細情報）</a><br>
-        <a href="https://forecast7.com/ja/35d50134d24/tottori/" target="_blank">▷ 鳥取市の天気予報</a>
+        <a href="https://tori-bousai.jp/yukinavi/" class="btn-link" target="_blank">公式：鳥取ゆきみちナビ</a>
+        <a href="https://forecast7.com/ja/35d50134d24/tottori/" class="btn-link" target="_blank">鳥取市の天気予報</a>
     </div>
 
 <script>
 /**
- * 【ここが重要】データの取得先
- * 元のサイトが自分のフォルダのデータを読み込んでいた場合は、このままで動くはずです。
+ * 【設定エリア】
+ * search: 元のサイトにある「検索文字」（これを元にデータを引っ張ってきます）
+ * name:   画面に表示する名前
+ * note:   備考欄に書く内容
  */
-const DATA_URL = "snow_data.json"; 
-
-const CONFIG = [
+const GROUP_CONFIG = [
     {
-        title: "① 主要峠（県境）",
+        title: "① 主要峠・山間部 (積雪注意)",
         points: [
-            { id: "101", name: "辰巳峠", note: "岡山県境。急坂注意" },
-            { id: "201", name: "戸倉峠", note: "兵庫県境。トンネル前注意" },
-            { id: "301", name: "志戸坂峠", note: "岡山方面。凍結多し" }
+            { search: "佐治町栃原【辰巳峠】", name: "辰巳峠", note: "岡山県境。急坂・積雪多し" },
+            { search: "鳥取市百谷【百谷ダム入口】", name: "百谷ダム", note: "路面凍結に注意" },
+            { search: "鳥取市洞谷", name: "洞谷", note: "" }
         ]
     },
     {
-        title: "② 国道29号（若桜方面）",
+        title: "② 国道53号 (智頭・河原方面)",
         points: [
-            { id: "202", name: "若桜", note: "市街地より雪深くなります" },
-            { id: "203", name: "丹比", note: "" }
+            { search: "用瀬町江波", name: "用瀬", note: "智頭方面へ向かう道" },
+            { search: "河原町河原", name: "河原", note: "インター周辺注意" },
+            { search: "鳥取市越路", name: "船岡(越路)", note: "" },
+            { search: "鳥取市高路", name: "倉田(高路)", note: "" }
         ]
     },
     {
-        title: "③ 国道53号（智頭方面）",
+        title: "③ 国道29号・県道 (若桜・国府方面)",
         points: [
-            { id: "302", name: "智頭", note: "冷え込みに注意" },
-            { id: "303", name: "用瀬", note: "橋の上の凍結に注意" }
+            { search: "国府町新町【鳥取盲学校前】", name: "国府町", note: "" },
+            { search: "鳥取市岩坪", name: "岩坪", note: "山間部" },
+            { search: "鳥取市細見", name: "細見", note: "" }
         ]
     },
     {
-        title: "④ 国道9号（岩美方面）",
+        title: "④ 国道9号 (岩美・福部・青谷)",
         points: [
-            { id: "401", name: "蒲生峠", note: "カーブが多い山道" },
-            { id: "402", name: "福部", note: "風が強い場合があります" }
+            { search: "岩美町浦富【岩美IC付近】", name: "岩美IC", note: "兵庫県境方面" },
+            { search: "福部町海士【海士交差点】", name: "福部", note: "9号線バイパス" },
+            { search: "福部町湯山【鳥取砂丘入口】", name: "砂丘入口", note: "観光地周辺" },
+            { search: "鳥取市白兎【JR立体交差南側】", name: "白兎", note: "海岸沿い・強風注意" },
+            { search: "青谷町絹見", name: "青谷", note: "" },
+            { search: "気高町下光元", name: "気高", note: "" }
         ]
     },
     {
-        title: "⑤ 鳥取市街・近郊",
+        title: "⑤ 鳥取市街地・主要交差点",
         points: [
-            { id: "501", name: "鳥取市役所付近", note: "交通量多し。足元注意" },
-            { id: "502", name: "河原", note: "" }
+            { search: "鳥取市東品治町【鳥取駅前】", name: "鳥取駅前", note: "交通量多し" },
+            { search: "鳥取市商栄町～南隈【国道9号立体交差】", name: "南隈(9号線)", note: "立体交差の凍結注意" },
+            { search: "鳥取市徳尾【嶋入口交差点】", name: "嶋入口", note: "商業施設周辺" },
+            { search: "鳥取市湖山町北【鳥取商業高前】", name: "湖山", note: "" },
+            { search: "鳥取市千代水【千代水4丁目周辺】", name: "千代水", note: "" },
+            { search: "鳥取市正蓮寺【正蓮寺交差点】", name: "正蓮寺", note: "坂道発進注意" },
+            { search: "鳥取市海蔵寺【環境大入口】", name: "海蔵寺", note: "" },
+            { search: "鳥取市北園", name: "北園", note: "高台の住宅地" },
+            { search: "鳥取市吉方町", name: "吉方", note: "" }
         ]
     }
 ];
 
-async function fetchAndRender() {
+/**
+ * 【データ取得エンジン】
+ * バックアップから復元したスクレイピングロジック
+ */
+async function refreshData() {
+    const headerDate = document.getElementById('headerDate');
+    const container = document.getElementById('main-container');
+    
+    // 読み込み中表示
+    if(!container.innerHTML) container.innerHTML = '<p style="text-align:center;">データを取得中...</p>';
+    
     try {
-        // データを取得
-        const response = await fetch(DATA_URL);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const dataList = await response.json(); 
+        const timestamp = new Date().getTime();
+        // CORS回避用プロキシを経由してアクセス
+        const targetUrl = 'https://tori-bousai.jp/yukinavi/tobu/?t=' + timestamp;
+        const response = await fetch('https://corsproxy.io/?' + encodeURIComponent(targetUrl));
+        const htmlText = await response.text();
         
-        render(dataList);
-        document.getElementById('last-update').innerText = "最終更新: " + new Date().toLocaleTimeString();
-    } catch (error) {
-        console.error("エラー:", error);
-        document.getElementById('last-update').innerHTML = 
-            "<span style='color:red;'>データの読み込みに失敗しました。</span><br>元のURL設定を確認してください。";
-    }
-}
+        // HTML解析
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
 
-function render(apiData) {
-    const area = document.getElementById('content-area');
-    area.innerHTML = "";
+        // 日時取得
+        let dataTime = "日時不明";
+        const timeElements = doc.querySelectorAll('td, div, p, span');
+        for (let el of timeElements) {
+            if (el.textContent.includes('観測日時') && el.textContent.match(/\d{4}\/\d{2}\/\d{2}/)) {
+                const match = el.textContent.match(/(\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2})/);
+                if (match) dataTime = match[1];
+                break;
+            }
+        }
+        headerDate.innerHTML = `📅 データ取得日時：${dataTime}`;
 
-    CONFIG.forEach(group => {
-        let rows = "";
-        group.points.forEach(p => {
-            const liveData = apiData.find(d => d.id == p.id) || { snow: "-", temp: "-" };
-            const rowClass = (liveData.snow > 0 && liveData.snow !== "-") ? "highlight" : "";
+        // HTML生成開始
+        let finalHtml = "";
+
+        // グループごとに処理
+        GROUP_CONFIG.forEach(group => {
+            let rowHtml = "";
             
-            rows += `
-                <tr class="${rowClass}">
-                    <td class="name-td">${p.name}</td>
-                    <td class="snow-td">${liveData.snow}<small>cm</small></td>
-                    <td class="temp-td">${liveData.temp}<small>℃</small></td>
-                    <td class="note-td">${p.note}</td>
-                </tr>
+            group.points.forEach(p => {
+                let snowStr = "--";
+                let tempStr = "--";
+                let linkUrl = "#";
+
+                // 1. リンクを探す (search文字を使用)
+                const links = doc.querySelectorAll('a');
+                let targetElement = null;
+
+                for (let a of links) {
+                    if (a.textContent.includes(p.search)) {
+                        const href = a.getAttribute('href');
+                        if (href && href.includes('detail.php')) {
+                            linkUrl = "https://tori-bousai.jp/yukinavi/tobu/" + href;
+                        }
+                        targetElement = a;
+                        break;
+                    }
+                }
+
+                // 2. データを探す
+                if (targetElement) {
+                    let parent = targetElement.parentElement;
+                    for (let i = 0; i < 5; i++) {
+                        if (!parent) break;
+                        const text = parent.textContent;
+                        if (text.includes("路上温度") || text.includes("路上積雪深")) {
+                            const tempMatch = text.match(/路上温度\s*([-\d\.]+)/);
+                            if (tempMatch) tempStr = tempMatch[1] + "℃";
+                            const snowMatch = text.match(/路上積雪深\s*([-\d\.]+)/);
+                            if (snowMatch) snowStr = snowMatch[1] + "cm";
+                            break;
+                        }
+                        parent = parent.parentElement;
+                    }
+                }
+
+                // 表示用データの整理
+                // 雪があるか判定（0cm以外なら強調）
+                let isSnowy = false;
+                if(snowStr !== "--" && !snowStr.startsWith("0cm") && !snowStr.startsWith("0.0")) {
+                    isSnowy = true;
+                }
+                const rowClass = isSnowy ? "has-snow" : "";
+                
+                // 行HTMLを作成
+                rowHtml += `
+                    <tr class="${rowClass}">
+                        <td class="cell-name"><a href="${linkUrl}" target="_blank" class="link-text">${p.name}</a></td>
+                        <td class="cell-snow">${snowStr}</td>
+                        <td class="cell-temp">${tempStr}</td>
+                        <td class="cell-note">${p.note}</td>
+                    </tr>
+                `;
+            });
+
+            // グループ全体のHTMLを作成
+            finalHtml += `
+                <div class="group-card">
+                    <div class="group-header">${group.title}</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>地点</th>
+                                <th>積雪</th>
+                                <th>温度</th>
+                                <th>備考</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowHtml}</tbody>
+                    </table>
+                </div>
             `;
         });
 
-        area.innerHTML += `
-            <div class="group-box">
-                <div class="group-header">${group.title}</div>
-                <table>
-                    <thead><tr><th>地点</th><th>積雪</th><th>気温</th><th>備考</th></tr></thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            </div>
-        `;
-    });
+        container.innerHTML = finalHtml;
+
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<p style="color:red; text-align:center;">エラー：データの取得に失敗しました。<br>しばらく待ってから再読み込みしてください。</p>';
+    }
 }
 
-fetchAndRender();
-setInterval(fetchAndRender, 600000);
+// 実行
+refreshData();
 </script>
 </body>
 </html>
-
